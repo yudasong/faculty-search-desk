@@ -6,7 +6,7 @@ A private workspace for a faculty job search, organized as schools → departmen
 
 - Keeps a personal school shortlist separate from a wider discovery pool.
 - Tracks CS, CSE, EECS, ECE, and other departments independently.
-- Saves a pasted HTTPS source as an immediate draft. When available, it extracts page titles and structured JobPosting data. Drafts remain unverified until research checks them.
+- Starts focused AI analysis when you add an HTTPS hiring link. It extracts individual openings, requirements and dates into the review inbox. Without an API key, the form clearly offers only Save for later.
 - Separates full-consideration/review dates from final closing dates.
 - Tracks application progress, required documents, references, notes, and source verification.
 - Stages new discoveries for human review; repeat research preserves personal notes and workflow.
@@ -41,13 +41,13 @@ The hosted platform must strip untrusted incoming identity headers and inject ve
 
 ## On-demand API research
 
-Use **Search now** to check the shortlist or full discovery pool. Queued links are included first. Research runs only on user request; this project creates no daily schedule and needs no separate scheduler or Cloudflare account when hosted on Sites.
+Use **Add and analyze** to immediately analyze a hiring link and its application pages. **Search now** checks the shortlist or full discovery pool; saved links not already being analyzed are included first. Research runs only on user request; this project creates no daily schedule and needs no separate scheduler or Cloudflare account when hosted on Sites.
 
 Set `OPENAI_API_KEY` as a secret in the hosting settings and deploy to apply it. Never put a key into chat, source code, a browser bundle, or `.openai/hosting.json`. `OPENAI_RESEARCH_MODEL` is optional and defaults to `gpt-5.6-terra`; use a Responses model supporting background mode, web search, and structured outputs. API billing is separate from a ChatGPT subscription. A missing key produces a setup message and never pretends a search ran. For local development, put these values in an ignored `.env` file (see `.env.example`).
 
-The authenticated server starts a stored background Responses API request and saves its response ID in D1. The website polls while open and resumes checking after reload. The provider can continue after the tab closes; importing findings into D1 happens when the website next polls. Each run is bounded to 120 tool calls and 16,000 output tokens, not a guaranteed complete census. Coverage gaps, failed sources, and unprocessed links stay visible.
+The authenticated server starts a stored background Responses API request and saves its response ID in D1. The website polls while open and resumes checking after reload. The provider can continue after the tab closes; importing findings into D1 happens when the website next polls. Link analysis runs independently of broader searches and is bounded to 25 tool calls; broader searches allow 120 tool calls and 16,000 output tokens, not a guaranteed complete census. Coverage gaps, failed sources, and unprocessed links stay visible.
 
-Runs are atomically claimed to prevent duplicate paid requests. Validated completed results and the run completion marker are imported in one guarded D1 batch. New openings enter the inbox, existing notes/workflow are preserved, and absent evidence does not erase known fields or close a position. Source and application URLs must belong to the school's domain, saved official sources, or supported hiring portals and appear in the provider's web evidence; this is a provenance check, not a guarantee that the model interpreted the source correctly. Review important requirements against the linked official posting.
+Jobs are atomically claimed to prevent duplicate paid requests for repeated submissions. Link saves use an atomic insert-if-absent batch that cannot overwrite existing notes. Failed or incomplete analysis requires an explicit retry. Validated completed results and the run completion marker are imported in one guarded D1 batch. New openings enter the inbox, existing notes/workflow are preserved, and absent evidence does not erase known fields or close a position. Source and application URLs must belong to the school's domain, saved official sources, or supported hiring portals and appear in the provider's web evidence; this is a provenance check, not a guarantee that the model interpreted the source correctly. Review important requirements against the linked official posting.
 
 The private research payload includes school names, department source URLs, known public posting identifiers, queued links, and role preferences. Personal notes and application workflow are not sent. Search and fetched content are untrusted data. Provider failures, refusals, and truncated outputs do not generate successful research records. An ambiguous start timeout is reported for manual review rather than automatically starting another paid request.
 
@@ -67,7 +67,7 @@ Hiring hubs are not proof of openings. Use individual official postings, preserv
 - `app/api/research/route.ts`, `lib/research.ts`: authenticated background API research
 - `lib/research-result.ts`: validated source-linked findings
 - `components/research-control.tsx`: search button, progress, and setup states
-- `lib/intake.ts`: bounded academic-source fetch and draft extraction
+- `lib/add-source.ts`, `lib/intake.ts`: atomic link intake and immediate AI analysis; optional basic preview extraction
 - `lib/types.ts`, `lib/seed.ts`: data model and initial records
 - `db/schema.ts`, `drizzle/`: schema and migrations
 

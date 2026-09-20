@@ -5,23 +5,26 @@ import { Button } from '@/components/ui/button';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 
-type State = { configured: boolean; job: null | { id: string; status: string; summary: string; error?: string; added?: number; gaps?: number; schoolCount: number } };
-export function ResearchControl({ considering, total, queued, onComplete }: { considering: number; total: number; queued: number; onComplete: () => Promise<unknown> }) {
+type Job = { id: string; status: string; summary: string; error?: string; added?: number; updated?: number; gaps?: number; needsRetry?: boolean; schoolCount: number; requestId?: string; sourceUrl?: string };
+type State = { configured: boolean; job: Job | null; links: Job[]; errors?: string[] };
+export function ResearchControl({ considering, total, queued, revision, onConfigured, onComplete }: { considering: number; total: number; queued: number; revision: number; onConfigured: (value: boolean) => void; onComplete: () => Promise<unknown> }) {
   const [state, setState] = useState<State | null>(null);
   const [open, setOpen] = useState(false), [scope, setScope] = useState('considering');
   const [busy, setBusy] = useState(false), [error, setError] = useState('');
-  const completed = useRef('');
+  const completed = useRef(new Set<string>());
   const running = state?.job?.status === 'starting' || state?.job?.status === 'running';
+  const linkRunning = state?.links.some(j => ['starting', 'running'].includes(j.status));
   const request = useCallback(async (body?: unknown) => {
     const response = await fetch('/api/research', body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : { cache: 'no-store' });
     const result = await response.json() as State & { error?: string }; if (!response.ok) throw new Error(result.error || 'Search is temporarily unavailable.');
-    setState(result); setError('');
-    if (result.job?.status === 'completed' && completed.current !== result.job.id) { completed.current = result.job.id; await onComplete(); }
+    setState(result); setError(result.errors?.join(' ') || ''); onConfigured(result.configured);
+    const finished = [result.job, ...result.links].filter((j): j is Job => !!j && j.status === 'completed' && !completed.current.has(j.id));
+    if (finished.length) { await onComplete(); finished.forEach(j => completed.current.add(j.id)); }
     return result as State;
-  }, [onComplete]);
-  useEffect(() => { request().catch(e => setError(e.message)); }, [request]);
+  }, [onComplete, onConfigured]);
+  useEffect(() => { request().catch(e => setError(e.message)); }, [request, revision]);
   useEffect(() => {
-    if (!running) return;
+    if (!running && !linkRunning) return;
     let stopped = false, timer: ReturnType<typeof setTimeout>;
     async function poll() {
       try { await request({ action: 'poll' }); } catch (e) { if (!stopped) setError((e as Error).message); }
@@ -29,7 +32,7 @@ export function ResearchControl({ considering, total, queued, onComplete }: { co
     }
     timer = setTimeout(poll, 1000);
     return () => { stopped = true; clearTimeout(timer); };
-  }, [running, request]);
+  }, [running, linkRunning, request]);
   async function start() {
     setBusy(true); setError('');
     try { await request({ action: 'start', scope }); setOpen(false); }
@@ -41,10 +44,15 @@ export function ResearchControl({ considering, total, queued, onComplete }: { co
       <Button variant="outline" onClick={() => setOpen(true)}><Radar size={17}/>{running ? 'Search in progress' : 'Search now'}</Button>
       {state && !state.configured && <span className="search-meta">API setup needed</span>}
     </div>
+    {state?.links.filter((job, index) => job.status !== 'completed' || index < 3).map(job => <div key={job.id} className={'search-progress' + (job.status === 'failed' ? ' has-error' : '')} role="status">
+      {['starting', 'running'].includes(job.status) ? <RefreshCw size={17} className="search-spinner"/> : job.status === 'completed' ? <Check size={17}/> : <AlertCircle size={17}/>}
+      <span><a href={job.sourceUrl} target="_blank" rel="noreferrer">{job.sourceUrl && new URL(job.sourceUrl).hostname}</a>: {job.error || (job.status === 'completed' ? `Analysis complete. ${job.added || 0} new, ${job.updated || 0} updated openings.${job.gaps ? ' Review coverage issues in Research history.' : ' Ready in your review inbox.'}` : 'AI is reading the page and its application links…')}</span>
+      {(job.status === 'failed' || (job.status === 'completed' && job.needsRetry)) && <Button variant="ghost" size="sm" disabled={busy || !state.configured} onClick={async () => { setBusy(true); try { await request({ action: 'analyze', requestId: job.requestId }); } catch (e) { setError((e as Error).message); } finally { setBusy(false); } }}>Retry analysis</Button>}
+    </div>)}
     {(running || error || state?.job) && <div className={'search-progress' + (error || state?.job?.status === 'failed' ? ' has-error' : '')} role="status">
       {running ? <RefreshCw size={17} className="search-spinner"/> : state?.job?.status === 'completed' ? <Check size={17}/> : <AlertCircle size={17}/>}
       <span>{error || state?.job?.error || (running ? `Searching ${state?.job?.schoolCount} schools. Results will appear in your review inbox.` : state?.job?.status === 'completed' ? `Search complete. ${state.job.added || 0} new openings in your review inbox.${state.job.gaps ? ' Coverage gaps are listed in Research history.' : ''}` : state?.job?.summary)}{running && <small>You can leave and return. Results are saved when this website checks the completed search.</small>}</span>
-      {error && <Button size="sm" variant="ghost" onClick={() => request(running ? { action: 'poll' } : undefined).catch(e => setError(e.message))}>Retry status</Button>}
+      {error && <Button size="sm" variant="ghost" onClick={() => request(running || linkRunning ? { action: 'poll' } : undefined).catch(e => setError(e.message))}>Retry status</Button>}
     </div>}
     <Dialog open={open} onOpenChange={value => !busy && setOpen(value)}><DialogContent>
       <DialogTitle>{running ? 'Search in progress' : 'Search for faculty openings'}</DialogTitle>

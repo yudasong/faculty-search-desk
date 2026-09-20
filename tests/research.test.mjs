@@ -58,7 +58,7 @@ function harness(t) {
     return handler(call);
   };
   t.after(() => { globalThis.fetch = originalFetch; sql.close(); });
-  return { api: load(resolve(root, 'lib/research.ts')), result: load(resolve(root, 'lib/research-result.ts')), env, hooks, put, get, count, records, calls, respond: fn => { handler = fn; } };
+  return { add: load(resolve(root, 'lib/add-source.ts')).addSource, api: load(resolve(root, 'lib/research.ts')), result: load(resolve(root, 'lib/research-result.ts')), env, hooks, put, get, count, records, calls, respond: fn => { handler = fn; } };
 }
 
 function complete(openings = [finding], extra = {}, evidence = [sourceUrl, applicationUrl]) {
@@ -139,4 +139,72 @@ test('queued portal links can resolve a school outside the shortlist', async t =
   const input = JSON.parse(h.calls[0].body.input); assert.equal(input.schoolsToSearch.length, 1); assert.equal(input.directoryForQueuedLinks.length, 2);
   h.respond(() => complete([{ ...finding, schoolId: 'other', sourceRequestId: 'link' }], { completedRequestIds: ['link'] }));
   await h.api.pollResearch(); assert.equal(h.count('opening'), 1); assert.equal(h.get('request', 'link').status, 'Researched');
+});
+
+test('adding a link immediately starts focused analysis, including during a broad search', async t => {
+  const h = harness(t); await h.api.startResearch('all');
+  const broad = h.get('meta', 'research');
+  const added = await h.add(sourceUrl);
+  assert.equal(added.analysis.status, 'running'); assert.equal(h.calls.length, 2);
+  const input = JSON.parse(h.calls[1].body.input);
+  assert.deepEqual(input.queuedLinks.map(r => r.url), [sourceUrl]);
+  assert.match(h.calls[1].body.instructions, /Analyze only the supplied queued link/);
+  assert.equal(h.calls[1].body.max_tool_calls, 25);
+  assert.equal(h.get('meta', 'research').id, broad.id);
+  const linkId = added.request.id;
+  h.respond(() => complete([{ ...finding, sourceRequestId: linkId }], { completedRequestIds: [linkId] }));
+  await h.api.pollResearch('research-link-' + linkId);
+  assert.equal(h.get('request', linkId).status, 'Researched');
+  assert.equal(h.get('meta', 'research').status, 'running');
+  assert.equal(h.get('opening', 'intake-' + linkId).workflow, 'Archived');
+  const state = await h.api.researchStatus(); assert.equal(state.links[0].status, 'completed');
+});
+
+test('duplicate link submissions share one paid analysis and never overwrite notes', async t => {
+  const h = harness(t);
+  const [first, second] = await Promise.all([h.add(sourceUrl), h.add(sourceUrl)]);
+  assert.equal(h.calls.length, 1); assert.equal(first.request.id, second.request.id); assert.equal(h.count('request'), 1); assert.equal(h.count('opening'), 1);
+  const draftId = 'intake-' + first.request.id;
+  h.put('opening', draftId, { ...h.get('opening', draftId), notes: 'My notes', workflow: 'Preparing' });
+  await h.add(sourceUrl); assert.equal(h.calls.length, 1);
+  assert.equal(h.get('opening', draftId).notes, 'My notes'); assert.equal(h.get('opening', draftId).workflow, 'Preparing');
+});
+
+test('a missing key or provider failure saves the link without pretending analysis ran', async t => {
+  const h = harness(t); delete h.env.OPENAI_API_KEY;
+  const saved = await h.add(sourceUrl); assert.equal(saved.analysis.status, 'setup_needed'); assert.equal(h.count('request'), 1); assert.equal(h.calls.length, 0);
+  h.env.OPENAI_API_KEY = 'fixture-key-not-real'; h.respond(() => new Response('', { status: 429 }));
+  const failed = await h.add(sourceUrl); assert.equal(failed.analysis.status, 'failed'); assert.equal(h.count('request'), 1);
+  const calls = h.calls.length; await h.add(sourceUrl); assert.equal(h.calls.length, calls, 'A repeated add must not retry a failed paid attempt');
+  h.respond(() => Response.json({ id: 'resp_retry', status: 'queued' }));
+  await h.api.startResearch('link', saved.request.id, true); assert.equal(h.calls.length, calls + 1);
+});
+
+test('finished links do not restart; partial link analysis requires an explicit retry', async t => {
+  const h = harness(t); const saved = await h.add(sourceUrl); const id = saved.request.id;
+  h.respond(() => complete([], { checkedSchoolIds: [], completedRequestIds: [], gaps: ['Source blocked'] }, []));
+  await h.api.pollAllResearch(); assert.equal(h.get('meta', 'research-link-' + id).needsRetry, true);
+  const calls = h.calls.length; await h.add(sourceUrl); assert.equal(h.calls.length, calls);
+  h.respond(() => Response.json({ id: 'resp_retry', status: 'queued' })); await h.api.startResearch('link', id, true);
+  h.respond(() => complete([], { completedRequestIds: [id], summary: 'No current openings.' }, [sourceUrl]));
+  await h.api.pollAllResearch(); assert.equal(h.get('request', id).status, 'Researched');
+  const finishedCalls = h.calls.length; await h.add(sourceUrl); assert.equal(h.calls.length, finishedCalls);
+});
+
+test('link completion can update the saved draft without archiving the analyzed opening', async t => {
+  const h = harness(t); const saved = await h.add(sourceUrl); const id = saved.request.id;
+  const draft = h.get('opening', 'intake-' + id);
+  h.respond(() => complete([{ ...finding, title: draft.title, sourceRequestId: id }], { completedRequestIds: [id] }));
+  await h.api.pollAllResearch();
+  assert.equal(h.count('opening'), 1); assert.equal(h.get('opening', draft.id).workflow, 'Inbox');
+  assert.equal(h.get('opening', draft.id).applicationUrl, applicationUrl);
+});
+
+test('adding a link already included in an active broad search reuses that search', async t => {
+  const h = harness(t); delete h.env.OPENAI_API_KEY;
+  const saved = await h.add(sourceUrl); h.env.OPENAI_API_KEY = 'fixture-key-not-real';
+  await h.api.startResearch('all'); const again = await h.add(sourceUrl);
+  assert.equal(h.calls.length, 1); assert.equal(again.analysis.status, 'running');
+  assert.ok(again.analysis.requestIds.includes(saved.request.id));
+  assert.equal(h.get('meta', 'research-link-' + saved.request.id), undefined);
 });

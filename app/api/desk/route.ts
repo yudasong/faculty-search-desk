@@ -1,7 +1,8 @@
 import { z } from 'zod';
 import { authorized } from '@/lib/desk-auth';
 import { getRecord, readDesk, saveRecord } from '@/lib/store';
-import { canonical, hash, intake } from '@/lib/intake';
+import { canonical, hash } from '@/lib/intake';
+import { addSource } from '@/lib/add-source';
 const text=z.string().max(12000);const short=z.string().max(500);const url=z.string().max(2500).refine(s=>!s||(()=>{try{canonical(s);return true}catch{return false}})(),'Use a valid public HTTPS URL');const date=z.string().refine(s=>!s||/^\d{4}-\d{2}-\d{2}$/.test(s),'Use YYYY-MM-DD');
 const opening=z.object({id:short.optional(),schoolId:short,department:short,title:short.min(1),sourceUrl:url.refine(Boolean),applicationUrl:url.default(''),deadline:date.default(''),deadlineType:short.default('Unknown'),deadlineText:text.default(''),hardDeadline:date.default(''),rank:short.default('Unknown'),areas:text.default(''),materials:text.default(''),letters:short.default(''),summary:text.default(''),checkedAt:date.default(''),verification:short.default('Unverified'),hiringStatus:z.enum(['Open','Closed','Unverified']).default('Unverified'),workflow:z.enum(['Inbox','Considering','Preparing','Applied','Interviewing','Offer','Archived']).default('Inbox'),notes:text.default(''),sourceKind:short.default('Research')});
 const school=z.object({id:short.min(1),name:short.min(1),shortName:short.min(1),country:short.default('US'),location:short.default(''),domain:short.default(''),considering:z.boolean().default(false),departments:z.array(short).max(15),sources:z.array(z.object({department:short,url:url.refine(Boolean),note:text.optional(),checkedAt:date.optional()})).max(30).default([]),notes:text.default(''),rankingNote:text.default('Membership not verified'),rankingSources:z.array(z.object({name:short,url,rank:z.number().optional(),year:short.optional()})).optional(),origin:short.default('Research')});
@@ -9,7 +10,7 @@ const school=z.object({id:short.min(1),name:short.min(1),shortName:short.min(1),
 export async function GET(request:Request){const denied=await authorized(request);if(denied)return denied;try{return Response.json(await readDesk(),{headers:{'Cache-Control':'no-store'}})}catch(e){console.error(e);return Response.json({error:'Your saved data is temporarily unavailable. Please retry.'},{status:503});}}
 export async function POST(request:Request){const denied=await authorized(request,true);if(denied)return denied;try{if(Number(request.headers.get('content-length')||0)>250000)return Response.json({error:'Request too large'},{status:413});const payload=await request.text();if(payload.length>250000)throw new Error('Request too large');const p=JSON.parse(payload);const desk=await readDesk();let result:any;
 switch(p.action){
- case 'intake':{const r=await intake(url.parse(p.url),desk);if(!r.existing){await saveRecord('request',r.request!.id,r.request);await saveRecord('opening',r.opening!.id,r.opening);}result=r;break;}
+ case 'intake':{result=await addSource(url.parse(p.url));break;}
  case 'save_opening':{const d=opening.parse(p.data);if(!d.id)throw new Error('Select an opening');if(!desk.schools.some(s=>s.id===d.schoolId)&&d.schoolId!=='unassigned')throw new Error('Choose an existing school');result=await saveRecord('opening',d.id,d,z.number().parse(p.revision));break;}
  case 'save_school':{const d=school.parse(p.data);result=await saveRecord('school',d.id,d,z.number().parse(p.revision));break;}
  case 'research_schools':{const items=z.array(school).max(100).parse(p.schools);for(const d of items){const old=await getRecord('school',d.id);await saveRecord('school',d.id,{...d,...(old?{considering:old.considering,notes:old.notes,origin:old.origin}: {})},old?.revision);}result={updated:items.length};break;}
