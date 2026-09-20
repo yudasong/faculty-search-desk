@@ -76,4 +76,4 @@ Never commit personal exports, `.env` files, `.wrangler` databases, login cookie
 
 ## Validation
 
-Run `npx tsc --noEmit` and `node --test tests/*.test.mjs` (Node 24 recommended). The research tests use in-memory SQLite and a mocked provider; they never spend API credits.
+Run `npx tsc --noEmit` and `node --test tests/*.test.mjs` (Node 24 recommended). The research tests use in-memory SQLite and a mocked provider; they never spend API credits. Transport regressions also run inside the installed Worker runtime with mocked outbound requests, checking runtime compatibility and credential-safe redirect rejection.

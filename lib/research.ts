@@ -3,6 +3,7 @@ import { database, getRecord, readDesk } from './store';
 import { hash } from './intake';
 import { decodeResearch, departmentName, matchesOpening, normalizedUrl, officialSource, openingPatch, providerSourceUrls, resultJsonSchema } from './research-result';
 import type { Opening } from './types';
+import { openAIResponse, ProviderError } from './openai-provider';
 
 export type ResearchScope = 'considering' | 'all' | 'link';
 type Job = { id: string; status: 'starting' | 'running' | 'blocked' | 'completed' | 'failed'; scope: ResearchScope; requestId?: string; sourceUrl?: string; startedAt: string; responseId?: string; browserKey?: boolean; schoolIds: string[]; requestIds: string[]; summary: string; error?: string; added?: number; updated?: number; checked?: number; gaps?: number; needsRetry?: boolean; revision?: number };
@@ -23,24 +24,10 @@ export async function researchStatus(apiKey?: string) {
   return { configured: !!key(apiKey), job: publicJob(job), links: (await linkJobs()).map(job => publicJob(job)!) };
 }
 
-class ProviderError extends Error { constructor(message: string, public status: number) { super(message); } }
 async function provider(path: string, body?: unknown, apiKey?: string) {
-  if (!key(apiKey)) throw new Error('Add your OpenAI API key using API key to enable research.');
-  let res: Response;
-  try {
-    res = await fetch('https://api.openai.com/v1/responses' + path, {
-      method: body ? 'POST' : 'GET', redirect: 'error',
-      headers: { Authorization: `Bearer ${key(apiKey)}`, 'Content-Type': 'application/json' },
-      ...(body ? { body: JSON.stringify(body) } : {}), signal: AbortSignal.timeout(30000),
-    });
-  } catch { throw new Error(body ? 'The provider did not confirm the search start. Check API usage before trying again; it may have started.' : 'Could not check progress. Your search is saved; retry shortly.'); }
-  if (!res.ok) {
-    // Do not return provider payloads or credentials to the browser/logs.
-    if (res.status === 401) throw new ProviderError('The API key was rejected. Update it using API key.', 401);
-    if (res.status === 429) throw new Error('OpenAI usage or rate limit reached. Check API billing and try again later.');
-    throw new ProviderError(`Research provider returned HTTP ${res.status}. Check the API configuration and try again.`, res.status);
-  }
-  return res.json() as Promise<any>;
+  const credential = key(apiKey);
+  if (!credential) throw new Error('Add your OpenAI API key using API key to enable research.');
+  return openAIResponse(path, body, credential);
 }
 
 async function updateJob(job: Job, changes: Partial<Job>) {

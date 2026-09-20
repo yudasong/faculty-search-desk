@@ -48,6 +48,17 @@ export function ResearchControl({ considering, total, queued, revision, onConfig
     catch (e) { setError((e as Error).message); await request().catch(() => {}); setError((e as Error).message); }
     finally { setBusy(false); }
   }
+  async function analyze(requestId?: string) {
+    setBusy(true); setError('');
+    try { await request({ action: 'analyze', requestId }); }
+    catch (e) {
+      const message = (e as Error).message;
+      const fresh = await request().catch(() => null);
+      // The saved job already displays its failure. Avoid a duplicate banner
+      // and ensure a failed retry replaces the previous, stale error message.
+      if (!fresh?.links.some(job => job.requestId === requestId && job.error === message)) setError(message);
+    } finally { setBusy(false); }
+  }
   return <>
     <div className="research-control">
       <Button variant="outline" onClick={() => setOpen(true)}><Radar size={17}/>{running ? 'Search in progress' : 'Search now'}</Button>
@@ -57,7 +68,7 @@ export function ResearchControl({ considering, total, queued, revision, onConfig
     {state?.links.filter((job, index) => job.status !== 'completed' || index < 3).map(job => <div key={job.id} className={'search-progress' + (job.status === 'failed' ? ' has-error' : '')} role="status">
       {['starting', 'running'].includes(job.status) ? <RefreshCw size={17} className="search-spinner"/> : job.status === 'completed' ? <Check size={17}/> : <AlertCircle size={17}/>}
       <span><a href={job.sourceUrl} target="_blank" rel="noreferrer">{job.sourceUrl && new URL(job.sourceUrl).hostname}</a>: {job.error || (job.status === 'completed' ? `Analysis complete. ${job.added || 0} new, ${job.updated || 0} updated openings.${job.gaps ? ' Review coverage issues in Research history.' : ' Ready in your review inbox.'}` : 'AI is reading the page and its application links…')}</span>
-      {(job.status === 'failed' || (job.status === 'completed' && job.needsRetry)) && <Button variant="ghost" size="sm" disabled={busy || !state.configured} onClick={async () => { setBusy(true); try { await request({ action: 'analyze', requestId: job.requestId }); } catch (e) { setError((e as Error).message); } finally { setBusy(false); } }}>Retry analysis</Button>}
+      {(job.status === 'failed' || (job.status === 'completed' && job.needsRetry)) && <Button variant="ghost" size="sm" disabled={busy || !state.configured} onClick={() => analyze(job.requestId)}>Retry analysis</Button>}
       {job.status === 'blocked' && <><Button variant="ghost" size="sm" disabled={!state.configured} onClick={() => request({ action: 'poll' }).catch(e => setError(e.message))}>Retry status</Button><Button variant="ghost" size="sm" onClick={() => request({ action: 'stop_tracking', requestId: job.requestId }).catch(e => setError(e.message))}>Stop tracking</Button></>}
     </div>)}
     {(running || error || state?.job) && <div className={'search-progress' + (error || state?.job?.status === 'failed' ? ' has-error' : '')} role="status">
