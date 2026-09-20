@@ -2,7 +2,7 @@ import { intake } from './intake';
 import { database, getRecord, readDesk } from './store';
 import { researchConfigured, startResearch } from './research';
 
-export async function addSource(url: string) {
+export async function addSource(url: string, apiKey?: string) {
   // The AI reads the source. Save promptly rather than waiting for a second HTML fetch.
   const result = await intake(url, await readDesk(), false);
   if (!result.existing) {
@@ -17,9 +17,9 @@ export async function addSource(url: string) {
   }
   const saved = result.request && await getRecord('request', result.request.id);
   if (!saved || saved.status === 'Researched') return { ...result, analysis: { status: 'existing' } };
-  if (!researchConfigured()) return { ...result, analysis: { status: 'setup_needed', error: 'Link saved. Connect an OpenAI API key to analyze it.' } };
+  if (!researchConfigured(apiKey)) return { ...result, analysis: { status: 'setup_needed', error: 'Link saved. Connect an OpenAI API key to analyze it.' } };
   try {
-    const state = await startResearch('link', saved.id);
+    const state = await startResearch('link', saved.id, false, apiKey);
     return { ...result, analysis: state.links.find(j => j.requestId === saved.id) || (state.job?.requestIds.includes(saved.id) ? state.job : { status: 'existing' }) };
   } catch (e) {
     // Saving succeeded. Report analysis failure separately so a retry cannot overwrite the draft.

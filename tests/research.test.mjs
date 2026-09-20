@@ -53,8 +53,8 @@ function harness(t) {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async (url, init) => {
     assert.match(url, /^https:\/\/api\.openai\.com\/v1\/responses(?:\/resp_[\w-]+)?$/);
-    assert.equal(init.headers.Authorization, 'Bearer fixture-key-not-real');
-    const call = { url, method: init.method, body: init.body && JSON.parse(init.body) }; calls.push(call);
+    assert.ok(init.headers.Authorization.startsWith('Bearer '));
+    const call = { authorization: init.headers.Authorization, url, method: init.method, body: init.body && JSON.parse(init.body) }; calls.push(call);
     return handler(call);
   };
   t.after(() => { globalThis.fetch = originalFetch; sql.close(); });
@@ -207,4 +207,74 @@ test('adding a link already included in an active broad search reuses that searc
   assert.equal(h.calls.length, 1); assert.equal(again.analysis.status, 'running');
   assert.ok(again.analysis.requestIds.includes(saved.request.id));
   assert.equal(h.get('meta', 'research-link-' + saved.request.id), undefined);
+});
+
+const browserKeyA = 'sk-browser-test-fixture-aaaaaaaa';
+const browserKeyB = 'sk-browser-test-fixture-bbbbbbbb';
+
+test('browser keys override server configuration without being saved or returned', async t => {
+  const h = harness(t);
+  await h.api.startResearch('all', undefined, false, browserKeyA);
+  assert.equal(h.calls[0].authorization, 'Bearer ' + browserKeyA);
+  const state = await h.api.researchStatus(browserKeyA);
+  assert.equal(state.configured, true);
+  for (const value of [state, h.records('meta'), h.records('request'), h.records('opening'), h.calls[0].body]) {
+    assert.equal(JSON.stringify(value).includes(browserKeyA), false);
+  }
+  delete h.env.OPENAI_API_KEY;
+  assert.equal((await h.api.researchStatus()).configured, false);
+});
+
+test('forgetting and restoring a browser key resumes the same saved response', async t => {
+  const h = harness(t);
+  await h.api.startResearch('all', undefined, false, browserKeyA);
+  const job = h.get('meta', 'research');
+  await h.api.pollAllResearch();
+  assert.equal(h.calls.length, 1, 'Must not fall back to a server key for this browser-started job');
+  assert.equal(h.get('meta', 'research').status, 'blocked');
+  h.respond(() => complete());
+  await h.api.pollAllResearch(browserKeyA);
+  assert.equal(h.get('meta', 'research').id, job.id);
+  assert.equal(h.get('meta', 'research').status, 'completed');
+  assert.equal(h.get('meta', 'research').error, undefined);
+  assert.equal(h.calls.filter(c => c.method === 'POST').length, 1);
+});
+
+test('a different API project cannot destroy a recoverable background result', async t => {
+  const h = harness(t); await h.api.startResearch('all', undefined, false, browserKeyA);
+  h.respond(() => new Response('', { status: 404 }));
+  await h.api.pollAllResearch(browserKeyB);
+  assert.equal(h.get('meta', 'research').status, 'blocked'); assert.equal(h.get('meta', 'research').responseId, 'resp_fixture');
+  h.respond(() => complete()); await h.api.pollAllResearch(browserKeyA);
+  assert.equal(h.get('meta', 'research').status, 'completed'); assert.equal(h.count('run'), 1);
+});
+
+test('simultaneous requests keep each browser credential separate', async t => {
+  const h = harness(t);
+  await Promise.all([h.api.startResearch('all', undefined, false, browserKeyA), h.add('https://example.edu/ece/job', browserKeyB)]);
+  assert.deepEqual(new Set(h.calls.map(c => c.authorization)), new Set(['Bearer ' + browserKeyA, 'Bearer ' + browserKeyB]));
+  assert.equal(h.env.OPENAI_API_KEY, 'fixture-key-not-real');
+});
+
+test('an inaccessible browser result can be explicitly abandoned without a paid retry', async t => {
+  const h = harness(t); await h.api.startResearch('all', undefined, false, browserKeyA);
+  h.respond(() => new Response('', { status: 410 })); await h.api.pollAllResearch(browserKeyA);
+  const calls = h.calls.length;
+  await h.api.stopTrackingResearch(undefined, browserKeyA);
+  assert.equal(h.get('meta', 'research').status, 'failed'); assert.equal(h.calls.length, calls);
+});
+
+test('forgetting a key during provider startup cannot lose the paid response ID', async t => {
+  const h = harness(t);
+  let entered, release;
+  const started = new Promise(resolve => { entered = resolve; });
+  const response = new Promise(resolve => { release = resolve; });
+  h.respond(() => { entered(); return response; });
+  const start = h.api.startResearch('all', undefined, false, browserKeyA);
+  await started; await h.api.pollAllResearch();
+  assert.equal(h.get('meta', 'research').status, 'starting');
+  release(Response.json({ id: 'resp_recoverable', status: 'queued' })); await start;
+  assert.equal(h.get('meta', 'research').responseId, 'resp_recoverable');
+  h.respond(() => complete()); await h.api.pollAllResearch(browserKeyA);
+  assert.equal(h.get('meta', 'research').status, 'completed');
 });

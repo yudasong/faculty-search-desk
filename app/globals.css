@@ -123,3 +123,7 @@ button,a,input,select,textarea { touch-action:manipulation; } button:not(:disabl
 @keyframes research-spin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.search-spinner{animation:none}}
 @media(max-width:600px){.research-control{width:100%;justify-content:space-between}.search-progress{min-width:0;flex-basis:100%}}
+
+.inline-key-icon{display:inline-block;vertical-align:middle;margin-right:6px}
+
+.api-key-dialog{max-height:90dvh;overflow-y:auto}.api-key-dialog .dialog-actions{position:static;margin-top:16px;padding-bottom:0}.api-key-dialog .small-copy{font-size:14px}
