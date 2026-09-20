@@ -1,0 +1,5 @@
+export type School = { id:string; name:string; shortName:string; country:string; location:string; domain:string; considering:boolean; departments:string[]; sources:{department:string;url:string;note?:string;checkedAt?:string}[]; notes:string; rankingNote:string; rankingSources?:{name:string;url:string;rank?:number;year?:string}[]; origin:string; revision?:number };
+export type Opening = { id:string;schoolId:string;department:string;title:string;sourceUrl:string;applicationUrl:string;deadline:string;deadlineType:string;deadlineText:string;hardDeadline:string;rank:string;areas:string;materials:string;letters:string;summary:string;checkedAt:string;verification:string;hiringStatus:string;workflow:string;notes:string;sourceKind:string;revision?:number; };
+export type RequestItem={id:string;url:string;title:string;status:string;createdAt:string;excerpt:string;error:string;schoolId?:string;};
+export type Run={id:string;date:string;summary:string;checked:number;newOpenings:number;failures:string[];sources?:string[]};
+export type DeskData={schools:School[];openings:Opening[];requests:RequestItem[];runs:Run[];settings:{scope:string;rankingRule:string;schedule:string};};

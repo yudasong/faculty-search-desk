@@ -1,0 +1,2693 @@
+{
+  "schemaVersion": 1,
+  "retrievedAt": "2026-09-20",
+  "scope": {
+    "label": "US CS ranking union \u2014 61 schools with documented top-50 membership",
+    "selectionRule": "User requests union: include a US school if it ranks in the top 50 in any credible CS ranking system. Record ranking source, year, scope, and rank or verified top-50 membership separately.",
+    "status": "documented_seed_union_not_exhaustive",
+    "note": "61-school discovery seed: complete 53-school CSRankings USA/all-areas/2021\u20132026 top-50 subset including ties; Caltech from THE Computer Science 2026 worldwide #11; Notre Dame from CS Open Rankings 2026 aggregate #47; six additional schools from the Brown-hosted U.S. News column (original edition unspecified). Official UC 2025\u201326 U.S. News ranks supplement six schools. This is not an exhaustive union of every ranking system; preserve source scopes and edition caveats.",
+    "comparisonSources": [
+      {
+        "name": "CSRankings",
+        "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+        "methodologyUrl": "https://csrankings.org/faq.html",
+        "note": "Verified directly in fully rendered browser; 53 institutions ranked <=50 including ties. No CSRankings code or publication dataset incorporated."
+      },
+      {
+        "name": "U.S. News graduate Computer Science",
+        "url": "https://www.usnews.com/best-graduate-schools/top-science-schools/computer-science-rankings",
+        "note": "Original publisher table inaccessible in research tool. Six UC members supported by official 2025\u201326 university report. Six extra schools use the clearly labeled university-hosted CS Open Rankings report, whose original U.S. News edition is unspecified."
+      },
+      {
+        "name": "CS Open Rankings",
+        "url": "https://drafty.cs.brown.edu/csopenrankings/",
+        "note": "Brown-hosted, updated 2026, default aggregate of U.S. News, faculty publications, placement and best-paper awards. Its publication implementation is different from CSRankings; never substitute its CSRankings-like column for the directly observed CSRankings ranks."
+      },
+      {
+        "name": "Times Higher Education Computer Science 2026",
+        "url": "https://www.timeshighereducation.com/world-university-rankings/california-institute-technology",
+        "note": "Caltech #11 worldwide. Worldwide top50 implies top50 among US institutions, but no US ordinal inferred."
+      }
+    ],
+    "verifiedSchoolCount": 61
+  },
+  "schools": [
+    {
+      "id": "cmu",
+      "name": "Carnegie Mellon University",
+      "city": "Pittsburgh",
+      "state": "PA",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 1,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "cmu-scs",
+          "code": "SCS",
+          "name": "School of Computer Science",
+          "sources": [
+            {
+              "url": "https://www.cs.cmu.edu/about/employment",
+              "kind": "department_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        },
+        {
+          "id": "cmu-ece",
+          "code": "ECE",
+          "name": "Electrical and Computer Engineering",
+          "sources": [
+            {
+              "url": "https://www.ece.cmu.edu/about/employment-opportunities.html",
+              "kind": "department_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mit",
+      "name": "Massachusetts Institute of Technology",
+      "city": "Cambridge",
+      "state": "MA",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 7,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "mit-eecs",
+          "code": "EECS",
+          "name": "Electrical Engineering and Computer Science",
+          "sources": [
+            {
+              "url": "https://www.eecs.mit.edu/career-opportunities-at-eecs/",
+              "kind": "department_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "berkeley",
+      "name": "University of California, Berkeley",
+      "city": "Berkeley",
+      "state": "CA",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 12,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        },
+        {
+          "source": "U.S. News graduate Computer Science",
+          "rank": 2,
+          "top50": true,
+          "scope": "US graduate Computer Science programs",
+          "period": "2025\u201326 edition",
+          "asOf": "2026-09-20",
+          "url": "https://www.universityofcalifornia.edu/news/uc-graduate-programs-and-schools-lead-nation-2025-26-us-news-best-graduate-schools-rankings",
+          "verificationMethod": "University of California official April 17, 2025 report, Computer Science section.",
+          "evidenceLevel": "university_official_report"
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "berkeley-eecs",
+          "code": "EECS",
+          "name": "Electrical Engineering and Computer Sciences",
+          "sources": [
+            {
+              "url": "https://eecs.berkeley.edu/connect/faculty-jobs/",
+              "kind": "department_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stanford",
+      "name": "Stanford University",
+      "city": "Stanford",
+      "state": "CA",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 10,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "stanford-cs",
+          "code": "CS",
+          "name": "Computer Science",
+          "sources": [
+            {
+              "url": "https://www.cs.stanford.edu/about/careers-work-us",
+              "kind": "department_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        },
+        {
+          "id": "stanford-ee",
+          "code": "EE",
+          "name": "Electrical Engineering",
+          "sources": [
+            {
+              "url": "https://ee.stanford.edu/job-openings",
+              "kind": "department_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "illinois",
+      "name": "University of Illinois Urbana-Champaign",
+      "city": "Urbana-Champaign",
+      "state": "IL",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 2,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "illinois-cs",
+          "code": "CS",
+          "name": "Siebel School of Computing and Data Science",
+          "sources": [
+            {
+              "url": "https://siebelschool.illinois.edu/about/positions/faculty-positions",
+              "kind": "department_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cornell",
+      "name": "Cornell University",
+      "city": "Ithaca",
+      "state": "NY",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 6,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "cornell-cs",
+          "code": "CS",
+          "name": "Computer Science, Cornell Bowers",
+          "sources": [
+            {
+              "url": "https://bowers.cornell.edu/careers",
+              "kind": "school_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "washington",
+      "name": "University of Washington",
+      "city": "Seattle",
+      "state": "WA",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 7,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "washington-cse",
+          "code": "CSE",
+          "name": "Paul G. Allen School of Computer Science and Engineering",
+          "sources": [
+            {
+              "url": "https://ap.washington.edu/ahr/academic-jobs/",
+              "kind": "university_academic_jobs",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "princeton",
+      "name": "Princeton University",
+      "city": "Princeton",
+      "state": "NJ",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 17,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "princeton-cs",
+          "code": "CS",
+          "name": "Computer Science",
+          "sources": [
+            {
+              "url": "https://www.cs.princeton.edu/jobs",
+              "kind": "department_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gatech",
+      "name": "Georgia Institute of Technology",
+      "city": "Atlanta",
+      "state": "GA",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 3,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "gatech-computing",
+          "code": "Computing",
+          "name": "College of Computing",
+          "sources": [
+            {
+              "url": "https://www.cc.gatech.edu/faculty-position-opportunities",
+              "kind": "school_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        },
+        {
+          "id": "gatech-cse",
+          "code": "CSE",
+          "name": "Computational Science and Engineering",
+          "sources": [
+            {
+              "url": "https://cse.gatech.edu/faculty-hiring",
+              "kind": "department_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "michigan",
+      "name": "University of Michigan",
+      "city": "Ann Arbor",
+      "state": "MI",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 7,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "michigan-cse",
+          "code": "CSE",
+          "name": "Computer Science and Engineering, EECS",
+          "sources": [
+            {
+              "url": "https://careers.umich.edu/browse-jobs/departments/215900?order=field_job_department&sort=asc",
+              "kind": "department_jobs_portal",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "utaustin",
+      "name": "University of Texas at Austin",
+      "city": "Austin",
+      "state": "TX",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 15,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "utaustin-cs",
+          "code": "CS",
+          "name": "Computer Science",
+          "sources": [
+            {
+              "url": "https://www.cs.utexas.edu/faculty/recruiting",
+              "kind": "department_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "maryland",
+      "name": "University of Maryland, College Park",
+      "city": "College Park",
+      "state": "MD",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 5,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "maryland-cs",
+          "code": "CS",
+          "name": "Computer Science",
+          "sources": [
+            {
+              "url": "https://www.cs.umd.edu/about/employment/faculty",
+              "kind": "department_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ucla",
+      "name": "University of California, Los Angeles",
+      "city": "Los Angeles",
+      "state": "CA",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 18,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        },
+        {
+          "source": "U.S. News graduate Computer Science",
+          "rank": 16,
+          "top50": true,
+          "scope": "US graduate Computer Science programs",
+          "period": "2025\u201326 edition",
+          "asOf": "2026-09-20",
+          "url": "https://www.universityofcalifornia.edu/news/uc-graduate-programs-and-schools-lead-nation-2025-26-us-news-best-graduate-schools-rankings",
+          "verificationMethod": "University of California official April 17, 2025 report, Computer Science section.",
+          "evidenceLevel": "university_official_report"
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "ucla-cs",
+          "code": "CS",
+          "name": "Computer Science",
+          "sources": [
+            {
+              "url": "https://www.cs.ucla.edu/faculty-recruitment-academic-and-staff-positions/",
+              "kind": "department_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence",
+              "notes": "Department page still labels recruitment 2022-2023; follow current official application portal before interpreting an opening as current."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ucsd",
+      "name": "University of California, San Diego",
+      "city": "La Jolla",
+      "state": "CA",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 4,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        },
+        {
+          "source": "U.S. News graduate Computer Science",
+          "rank": 13,
+          "top50": true,
+          "scope": "US graduate Computer Science programs",
+          "period": "2025\u201326 edition",
+          "asOf": "2026-09-20",
+          "url": "https://www.universityofcalifornia.edu/news/uc-graduate-programs-and-schools-lead-nation-2025-26-us-news-best-graduate-schools-rankings",
+          "verificationMethod": "University of California official April 17, 2025 report, Computer Science section.",
+          "evidenceLevel": "university_official_report"
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "ucsd-cse",
+          "code": "CSE",
+          "name": "Computer Science and Engineering",
+          "sources": [
+            {
+              "url": "https://cse.ucsd.edu/administration/human-resources/recruitment/opportunities",
+              "kind": "department_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wisconsin",
+      "name": "University of Wisconsin-Madison",
+      "city": "Madison",
+      "state": "WI",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 15,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "wisconsin-cs",
+          "code": "CS",
+          "name": "Computer Sciences",
+          "sources": [
+            {
+              "url": "https://www.cs.wisc.edu/people/faculty-staff-recruitment/",
+              "kind": "department_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "columbia",
+      "name": "Columbia University",
+      "city": "New York",
+      "state": "NY",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 20,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "columbia-cs",
+          "code": "CS",
+          "name": "Computer Science",
+          "sources": [
+            {
+              "url": "https://www.cs.columbia.edu/open-positions/",
+              "kind": "department_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "harvard",
+      "name": "Harvard University",
+      "city": "Cambridge",
+      "state": "MA",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 42,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "harvard-cs",
+          "code": "CS",
+          "name": "Computer Science, SEAS",
+          "sources": [
+            {
+              "url": "https://academicpositions.harvard.edu/postings/search?388%5B%5D=10&commit=Search&query=&query_v0_posted_at_date=&utf8=%E2%9C%93",
+              "kind": "school_jobs_portal",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "penn",
+      "name": "University of Pennsylvania",
+      "city": "Philadelphia",
+      "state": "PA",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 18,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "penn-cis",
+          "code": "CIS",
+          "name": "Computer and Information Science",
+          "sources": [
+            {
+              "url": "https://facultyjobs.upenn.edu/",
+              "kind": "university_academic_jobs",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "brown",
+      "name": "Brown University",
+      "city": "Providence",
+      "state": "RI",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 50,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "brown-cs",
+          "code": "CS",
+          "name": "Computer Science",
+          "sources": [
+            {
+              "url": "https://cs.brown.edu/about/positions/",
+              "kind": "department_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "yale",
+      "name": "Yale University",
+      "city": "New Haven",
+      "state": "CT",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 42,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "yale-cs",
+          "code": "CS",
+          "name": "Computer Science",
+          "sources": [
+            {
+              "url": "https://academicpositions.yale.edu/",
+              "kind": "university_academic_jobs",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "duke",
+      "name": "Duke University",
+      "city": "Durham",
+      "state": "NC",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 31,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "duke-cs",
+          "code": "CS",
+          "name": "Computer Science",
+          "sources": [
+            {
+              "url": "https://cs.duke.edu/jobs",
+              "kind": "department_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "northwestern",
+      "name": "Northwestern University",
+      "city": "Evanston",
+      "state": "IL",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 29,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "northwestern-cs",
+          "code": "CS",
+          "name": "Computer Science",
+          "sources": [
+            {
+              "url": "https://www.mccormick.northwestern.edu/computer-science/careers/",
+              "kind": "department_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "purdue",
+      "name": "Purdue University",
+      "city": "West Lafayette",
+      "state": "IN",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 10,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "purdue-cs",
+          "code": "CS",
+          "name": "Computer Science",
+          "sources": [
+            {
+              "url": "https://www.cs.purdue.edu/hiring/tenure-track.html",
+              "kind": "department_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "umass",
+      "name": "University of Massachusetts Amherst",
+      "city": "Amherst",
+      "state": "MA",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 22,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "umass-cics",
+          "code": "CICS",
+          "name": "Manning College of Information and Computer Sciences",
+          "sources": [
+            {
+              "url": "https://www.cics.umass.edu/about/employment",
+              "kind": "school_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "jhu",
+      "name": "Johns Hopkins University",
+      "city": "Baltimore",
+      "state": "MD",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 31,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "jhu-cs",
+          "code": "CS",
+          "name": "Computer Science",
+          "sources": [
+            {
+              "url": "https://www.cs.jhu.edu/about/employment-opportunities/",
+              "kind": "department_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "usc",
+      "name": "University of Southern California",
+      "city": "Los Angeles",
+      "state": "CA",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 20,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "usc-cs",
+          "code": "CS",
+          "name": "Thomas Lord Department of Computer Science",
+          "sources": [
+            {
+              "url": "https://usccareers.usc.edu/",
+              "kind": "university_jobs",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rice",
+      "name": "Rice University",
+      "city": "Houston",
+      "state": "TX",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 42,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "rice-cs",
+          "code": "CS",
+          "name": "Computer Science",
+          "sources": [
+            {
+              "url": "https://csweb.rice.edu/hiring",
+              "kind": "department_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nyu",
+      "name": "New York University",
+      "city": "New York",
+      "state": "NY",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 14,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "nyu-cs",
+          "code": "CS",
+          "name": "Computer Science, Courant",
+          "sources": [
+            {
+              "url": "https://cs.nyu.edu/dynamic/jobs/openings/",
+              "kind": "department_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        },
+        {
+          "id": "nyu-cse",
+          "code": "CSE",
+          "name": "Computer Science and Engineering, Tandon",
+          "sources": [
+            {
+              "url": "https://engineering.nyu.edu/academics/departments/computer-science-and-engineering/available-faculty-positions",
+              "kind": "department_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "unc",
+      "name": "University of North Carolina at Chapel Hill",
+      "city": "Chapel Hill",
+      "state": "NC",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 42,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "unc-cs",
+          "code": "CS",
+          "name": "Computer Science",
+          "sources": [
+            {
+              "url": "https://cs.unc.edu/about/faculty-hiring/",
+              "kind": "department_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "virginia",
+      "name": "University of Virginia",
+      "city": "Charlottesville",
+      "state": "VA",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 22,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "virginia-cs",
+          "code": "CS",
+          "name": "Computer Science",
+          "sources": [
+            {
+              "url": "https://engineering.virginia.edu/about-our-school/employment",
+              "kind": "school_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        },
+        {
+          "id": "virginia-ece",
+          "code": "ECE",
+          "name": "Electrical and Computer Engineering",
+          "sources": [
+            {
+              "url": "https://engineering.virginia.edu/about-our-school/employment",
+              "kind": "school_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "minnesota",
+      "name": "University of Minnesota Twin Cities",
+      "city": "Minneapolis",
+      "state": "MN",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 46,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "minnesota-cse",
+          "code": "CSE",
+          "name": "Computer Science and Engineering",
+          "sources": [
+            {
+              "url": "https://cse.umn.edu/cs/faculty-recruiting",
+              "kind": "department_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        },
+        {
+          "id": "minnesota-ece",
+          "code": "ECE",
+          "name": "Electrical and Computer Engineering",
+          "sources": [
+            {
+              "url": "https://cse.umn.edu/ece/faculty-search",
+              "kind": "department_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ohio-state",
+      "name": "Ohio State University",
+      "city": "Columbus",
+      "state": "OH",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 50,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "ohio-state-cse",
+          "code": "CSE",
+          "name": "Computer Science and Engineering",
+          "sources": [
+            {
+              "url": "https://cse.osu.edu/department/tenuredtenure-track-faculty-positions",
+              "kind": "department_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rutgers",
+      "name": "Rutgers University-New Brunswick",
+      "city": "New Brunswick",
+      "state": "NJ",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 31,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "rutgers-cs",
+          "code": "CS",
+          "name": "Computer Science",
+          "sources": [
+            {
+              "url": "https://jobs.rutgers.edu/postings/search?2201%5B%5D=3&commit=Search&query=SAS&sort=2282+asc&utf8=%E2%9C%93",
+              "kind": "university_academic_jobs",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stonybrook",
+      "name": "Stony Brook University",
+      "city": "Stony Brook",
+      "state": "NY",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 27,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "stonybrook-cs",
+          "code": "CS",
+          "name": "Computer Science",
+          "sources": [
+            {
+              "url": "https://www.cs.stonybrook.edu/about-us/career",
+              "kind": "department_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            },
+            {
+              "url": "https://www.stonybrook.edu/jobs/faculty.html",
+              "kind": "university_academic_jobs",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web search"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "penn-state",
+      "name": "Pennsylvania State University",
+      "city": "University Park",
+      "state": "PA",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 34,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "penn-state-cse",
+          "code": "CSE",
+          "name": "Computer Science and Engineering",
+          "sources": [
+            {
+              "url": "https://engr.psu.edu/academic-positions/",
+              "kind": "school_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "virginia-tech",
+      "name": "Virginia Tech",
+      "city": "Blacksburg",
+      "state": "VA",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 34,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "virginia-tech-cs",
+          "code": "CS",
+          "name": "Computer Science",
+          "sources": [
+            {
+              "url": "https://cs.vt.edu/About/faculty-search.html",
+              "kind": "department_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "uci",
+      "name": "University of California, Irvine",
+      "city": "Irvine",
+      "state": "CA",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 22,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        },
+        {
+          "source": "U.S. News graduate Computer Science",
+          "rank": 27,
+          "top50": true,
+          "scope": "US graduate Computer Science programs",
+          "period": "2025\u201326 edition",
+          "asOf": "2026-09-20",
+          "url": "https://www.universityofcalifornia.edu/news/uc-graduate-programs-and-schools-lead-nation-2025-26-us-news-best-graduate-schools-rankings",
+          "verificationMethod": "University of California official April 17, 2025 report, Computer Science section.",
+          "evidenceLevel": "university_official_report"
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "uci-cs",
+          "code": "CS",
+          "name": "Computer Science, Donald Bren School of ICS",
+          "sources": [
+            {
+              "url": "https://ics.uci.edu/academic-recruitment/",
+              "kind": "school_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        },
+        {
+          "id": "uci-eecs",
+          "code": "EECS",
+          "name": "Electrical Engineering and Computer Science",
+          "sources": [
+            {
+              "url": "https://engineering.uci.edu/employment/eecs",
+              "kind": "department_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ucdavis",
+      "name": "University of California, Davis",
+      "city": "Davis",
+      "state": "CA",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 46,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        },
+        {
+          "source": "U.S. News graduate Computer Science",
+          "rank": 39,
+          "top50": true,
+          "scope": "US graduate Computer Science programs",
+          "period": "2025\u201326 edition",
+          "asOf": "2026-09-20",
+          "url": "https://www.universityofcalifornia.edu/news/uc-graduate-programs-and-schools-lead-nation-2025-26-us-news-best-graduate-schools-rankings",
+          "verificationMethod": "University of California official April 17, 2025 report, Computer Science section.",
+          "evidenceLevel": "university_official_report"
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "ucdavis-cs",
+          "code": "CS",
+          "name": "Computer Science",
+          "sources": [
+            {
+              "url": "https://cs.ucdavis.edu/job-opportunities",
+              "kind": "department_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ucsb",
+      "name": "University of California, Santa Barbara",
+      "city": "Santa Barbara",
+      "state": "CA",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 37,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        },
+        {
+          "source": "U.S. News graduate Computer Science",
+          "rank": 27,
+          "top50": true,
+          "scope": "US graduate Computer Science programs",
+          "period": "2025\u201326 edition",
+          "asOf": "2026-09-20",
+          "url": "https://www.universityofcalifornia.edu/news/uc-graduate-programs-and-schools-lead-nation-2025-26-us-news-best-graduate-schools-rankings",
+          "verificationMethod": "University of California official April 17, 2025 report, Computer Science section.",
+          "evidenceLevel": "university_official_report"
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "ucsb-cs",
+          "code": "CS",
+          "name": "Computer Science",
+          "sources": [
+            {
+              "url": "https://recruit.ap.ucsb.edu/apply",
+              "kind": "university_academic_jobs",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chicago",
+      "name": "University of Chicago",
+      "city": "Chicago",
+      "state": "IL",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 29,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "chicago-cs",
+          "code": "CS",
+          "name": "Computer Science",
+          "sources": [
+            {
+              "url": "https://cs.uchicago.edu/about/job-openings/",
+              "kind": "department_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "colorado",
+      "name": "University of Colorado Boulder",
+      "city": "Boulder",
+      "state": "CO",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 50,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "colorado-cs",
+          "code": "CS",
+          "name": "Computer Science",
+          "sources": [
+            {
+              "url": "https://www.colorado.edu/cs/jobs",
+              "kind": "department_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "utah",
+      "name": "University of Utah",
+      "city": "Salt Lake City",
+      "state": "UT",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 25,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "utah-computing",
+          "code": "Computing",
+          "name": "Kahlert School of Computing",
+          "sources": [
+            {
+              "url": "https://www.cs.utah.edu/people/faculty/hiring/",
+              "kind": "department_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "northeastern",
+      "name": "Northeastern University",
+      "city": "Boston",
+      "state": "MA",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 13,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "northeastern-khoury",
+          "code": "Khoury",
+          "name": "Khoury College of Computer Sciences",
+          "sources": [
+            {
+              "url": "https://www.khoury.northeastern.edu/careers/",
+              "kind": "school_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "boston",
+      "name": "Boston University",
+      "city": "Boston",
+      "state": "MA",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 37,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "boston-cds",
+          "code": "CDS",
+          "name": "Faculty of Computing and Data Sciences",
+          "sources": [
+            {
+              "url": "https://www.bu.edu/cds-faculty/culture-community/join-us/faculty-positions/",
+              "kind": "school_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        },
+        {
+          "id": "boston-cs",
+          "code": "CS",
+          "name": "Computer Science",
+          "sources": [
+            {
+              "url": "https://www.bu.edu/cs/2024/10/15/bu-cs-opens-search-for-new-faculty-members/",
+              "kind": "historical_department_announcement",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "notes": "2024 announcement: discover the current hub; do not ingest as a current opening."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "caltech",
+      "name": "California Institute of Technology",
+      "city": "Pasadena",
+      "state": "CA",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "Times Higher Education Computer Science",
+          "rank": 11,
+          "top50": true,
+          "scope": "Worldwide CS subject ranking; worldwide top 50 implies US top 50 membership",
+          "period": "2026",
+          "asOf": "2026-09-20",
+          "url": "https://www.timeshighereducation.com/world-university-rankings/california-institute-technology",
+          "verificationMethod": "Ranking publisher profile explicitly reports Computer Science 2026 11th; this is a worldwide rank, not a claimed US ordinal.",
+          "evidenceLevel": "ranking_publisher"
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "caltech-cms",
+          "code": "CMS",
+          "name": "Computing and Mathematical Sciences",
+          "sources": [
+            {
+              "url": "https://www.applications.caltech.edu/jobs",
+              "kind": "university_academic_jobs",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ],
+      "rankingObservations": [
+        {
+          "source": "CSRankings",
+          "rank": 80,
+          "top50": false,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us"
+        }
+      ]
+    },
+    {
+      "id": "tamu",
+      "name": "Texas A&M University",
+      "city": "College Station",
+      "state": "TX",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 37,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "tamu-cse",
+          "code": "CSE",
+          "name": "Computer Science and Engineering",
+          "sources": [
+            {
+              "url": "https://faculty.tamu.edu/JobDetail?JobId=192732",
+              "kind": "official_job_posting",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        },
+        {
+          "id": "tamu-ece",
+          "code": "ECE",
+          "name": "Electrical and Computer Engineering",
+          "sources": [
+            {
+              "url": "https://faculty.tamu.edu/JobDetail?JobId=188821",
+              "kind": "official_job_posting",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ncstate",
+      "name": "North Carolina State University",
+      "city": "Raleigh",
+      "state": "NC",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 46,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "ncstate-cs",
+          "code": "CS",
+          "name": "Computer Science",
+          "sources": [
+            {
+              "url": "https://csc.ncsu.edu/employment/",
+              "kind": "department_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "florida",
+      "name": "University of Florida",
+      "city": "Gainesville",
+      "state": "FL",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "U.S. News graduate CS (via CS Open Rankings)",
+          "rank": 45,
+          "top50": true,
+          "scope": "US graduate Computer Science programs",
+          "period": "Edition unspecified; aggregator updated 2026",
+          "asOf": "2026-09-20",
+          "url": "https://drafty.cs.brown.edu/csopenrankings/",
+          "verificationMethod": "U.S. News column directly read from Brown-hosted CS Open Rankings table. This verifies the aggregator report; original U.S. News edition is not specified.",
+          "evidenceLevel": "university_hosted_secondary_report",
+          "caveat": "Do not label this an official 2026 U.S. News rank; original edition needs confirmation."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "florida-cise",
+          "code": "CISE",
+          "name": "Computer and Information Science and Engineering",
+          "sources": [
+            {
+              "url": "https://explore.jobs.ufl.edu/en-us/job/537329/assistantassociatefull-professor-ai-models-systems-and-applications",
+              "kind": "official_job_posting",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence",
+              "notes": "Specific posting is for the Jacksonville campus; do not conflate campus with Gainesville."
+            }
+          ]
+        }
+      ],
+      "rankingObservations": [
+        {
+          "source": "CSRankings",
+          "rank": 65,
+          "top50": false,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us"
+        }
+      ]
+    },
+    {
+      "id": "washu",
+      "name": "Washington University in St. Louis",
+      "city": "St. Louis",
+      "state": "MO",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "U.S. News graduate CS (via CS Open Rankings)",
+          "rank": 42,
+          "top50": true,
+          "scope": "US graduate Computer Science programs",
+          "period": "Edition unspecified; aggregator updated 2026",
+          "asOf": "2026-09-20",
+          "url": "https://drafty.cs.brown.edu/csopenrankings/",
+          "verificationMethod": "U.S. News column directly read from Brown-hosted CS Open Rankings table. This verifies the aggregator report; original U.S. News edition is not specified.",
+          "evidenceLevel": "university_hosted_secondary_report",
+          "caveat": "Do not label this an official 2026 U.S. News rank; original edition needs confirmation."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "washu-cse",
+          "code": "CSE",
+          "name": "Computer Science and Engineering",
+          "sources": [
+            {
+              "url": "https://jobs.washu.edu/",
+              "kind": "university_jobs",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ],
+      "rankingObservations": [
+        {
+          "source": "CSRankings",
+          "rank": 57,
+          "top50": false,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us"
+        }
+      ]
+    },
+    {
+      "id": "ucr",
+      "name": "University of California, Riverside",
+      "city": "Riverside",
+      "state": "CA",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 25,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "ucr-cse",
+          "code": "CSE",
+          "name": "Computer Science and Engineering",
+          "sources": [
+            {
+              "url": "https://www1.cs.ucr.edu/cse-employment",
+              "kind": "department_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search or linked directly from verified department page",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gmu",
+      "name": "George Mason University",
+      "city": "Fairfax",
+      "state": "VA",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 27,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "gmu-cs",
+          "code": "CS",
+          "name": "Computer Science",
+          "sources": [
+            {
+              "url": "https://cs.gmu.edu/people",
+              "kind": "department_hiring_link_directory",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search or linked directly from verified department page",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "asu",
+      "name": "Arizona State University",
+      "city": "Tempe",
+      "state": "AZ",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 34,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "asu-scai",
+          "code": "SCAI",
+          "name": "School of Computing and Augmented Intelligence",
+          "sources": [
+            {
+              "url": "https://hiring.engineering.asu.edu/",
+              "kind": "school_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search or linked directly from verified department page",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ucf",
+      "name": "University of Central Florida",
+      "city": "Orlando",
+      "state": "FL",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 40,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "ucf-cs",
+          "code": "CS",
+          "name": "Computer Science",
+          "sources": [
+            {
+              "url": "https://jobs.ucf.edu/faculty",
+              "kind": "university_academic_jobs",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search or linked directly from verified department page",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "uic",
+      "name": "University of Illinois Chicago",
+      "city": "Chicago",
+      "state": "IL",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 40,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "uic-cs",
+          "code": "CS",
+          "name": "Computer Science",
+          "sources": [
+            {
+              "url": "https://cs.uic.edu/faculty-staff/open-positions/",
+              "kind": "department_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search or linked directly from verified department page",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "buffalo",
+      "name": "University at Buffalo",
+      "city": "Buffalo",
+      "state": "NY",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 46,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "buffalo-cse",
+          "code": "CSE",
+          "name": "Computer Science and Engineering",
+          "sources": [
+            {
+              "url": "https://engineering.buffalo.edu/computer-science-engineering/news-and-events/employment-opportunities.html",
+              "kind": "department_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search or linked directly from verified department page",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ucsc",
+      "name": "University of California, Santa Cruz",
+      "city": "Santa Cruz",
+      "state": "CA",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CSRankings",
+          "rank": 50,
+          "top50": true,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "publicationData": "DBLP September 2026",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us",
+          "verificationMethod": "Directly observed fully rendered browser ranking table; USA, start 2021, end 2026, all area checkboxes checked. Include all ties at rank 50."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "ucsc-cse",
+          "code": "CSE",
+          "name": "Computer Science and Engineering",
+          "sources": [
+            {
+              "url": "https://recruit.ucsc.edu/apply",
+              "kind": "university_academic_jobs",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search or linked directly from verified department page",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dartmouth",
+      "name": "Dartmouth College",
+      "city": "Hanover",
+      "state": "NH",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "U.S. News graduate CS (via CS Open Rankings)",
+          "rank": 50,
+          "top50": true,
+          "scope": "US graduate Computer Science programs",
+          "period": "Edition unspecified; aggregator updated 2026",
+          "asOf": "2026-09-20",
+          "url": "https://drafty.cs.brown.edu/csopenrankings/",
+          "verificationMethod": "U.S. News column directly read from Brown-hosted CS Open Rankings table. This verifies the aggregator report; original U.S. News edition is not specified.",
+          "evidenceLevel": "university_hosted_secondary_report",
+          "caveat": "Do not label this an official 2026 U.S. News rank; original edition needs confirmation."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "dartmouth-cs",
+          "code": "CS",
+          "name": "Computer Science",
+          "sources": [
+            {
+              "url": "https://careers.dartmouth.edu/apply-jobs/application-faq",
+              "kind": "university_hiring_link_directory",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search or linked directly from verified department page",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ],
+      "rankingObservations": [
+        {
+          "source": "CSRankings",
+          "rank": 65,
+          "top50": false,
+          "scope": "US institutions; all research areas",
+          "period": "2021\u20132026 inclusive",
+          "asOf": "2026-09-20",
+          "url": "https://csrankings.org/#/fromyear/2021/toyear/2026/index?all&us"
+        }
+      ]
+    },
+    {
+      "id": "indiana",
+      "name": "Indiana University Bloomington",
+      "city": "Bloomington",
+      "state": "IN",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "U.S. News graduate CS (via CS Open Rankings)",
+          "rank": 50,
+          "top50": true,
+          "scope": "US graduate Computer Science programs",
+          "period": "Edition unspecified; aggregator updated 2026",
+          "asOf": "2026-09-20",
+          "url": "https://drafty.cs.brown.edu/csopenrankings/",
+          "verificationMethod": "U.S. News column directly read from Brown-hosted CS Open Rankings table. This verifies the aggregator report; original U.S. News edition is not specified.",
+          "evidenceLevel": "university_hosted_secondary_report",
+          "caveat": "Do not label this an official 2026 U.S. News rank; original edition needs confirmation."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "indiana-cs",
+          "code": "CS",
+          "name": "Computer Science, Luddy School of Informatics, Computing, and Engineering",
+          "sources": [
+            {
+              "url": "https://indiana.peopleadmin.com/postings/search?commit=Search&query=&query_organizational_tier_1_id%5B%5D=236&query_organizational_tier_2_id%5B%5D=any&query_organizational_tier_3_id%5B%5D=any&query_v0_posted_at_date=",
+              "kind": "university_faculty_jobs",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence",
+              "note": "Bloomington campus filter; verify Luddy department on each individual job."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rochester",
+      "name": "University of Rochester",
+      "city": "Rochester",
+      "state": "NY",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "U.S. News graduate CS (via CS Open Rankings)",
+          "rank": 50,
+          "top50": true,
+          "scope": "US graduate Computer Science programs",
+          "period": "Edition unspecified; aggregator updated 2026",
+          "asOf": "2026-09-20",
+          "url": "https://drafty.cs.brown.edu/csopenrankings/",
+          "verificationMethod": "U.S. News column directly read from Brown-hosted CS Open Rankings table. This verifies the aggregator report; original U.S. News edition is not specified.",
+          "evidenceLevel": "university_hosted_secondary_report",
+          "caveat": "Do not label this an official 2026 U.S. News rank; original edition needs confirmation."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "rochester-cs",
+          "code": "CS",
+          "name": "Computer Science",
+          "sources": [
+            {
+              "url": "https://www.cs.rochester.edu/about/recruit.html",
+              "kind": "department_hiring",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence",
+              "note": "No current faculty postings shown when checked September 20, 2026."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vanderbilt",
+      "name": "Vanderbilt University",
+      "city": "Nashville",
+      "state": "TN",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "U.S. News graduate CS (via CS Open Rankings)",
+          "rank": 50,
+          "top50": true,
+          "scope": "US graduate Computer Science programs",
+          "period": "Edition unspecified; aggregator updated 2026",
+          "asOf": "2026-09-20",
+          "url": "https://drafty.cs.brown.edu/csopenrankings/",
+          "verificationMethod": "U.S. News column directly read from Brown-hosted CS Open Rankings table. This verifies the aggregator report; original U.S. News edition is not specified.",
+          "evidenceLevel": "university_hosted_secondary_report",
+          "caveat": "Do not label this an official 2026 U.S. News rank; original edition needs confirmation."
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "vanderbilt-cs",
+          "code": "CS",
+          "name": "Computer Science, College of Connected Computing",
+          "sources": [
+            {
+              "url": "https://www.vanderbilt.edu/provost/jobs/",
+              "kind": "university_faculty_jobs",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence",
+              "note": "Official faculty board appears stale in retrieved text; search the College of Connected Computing and Interfolio as additional sources."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "notre-dame",
+      "name": "University of Notre Dame",
+      "city": "Notre Dame",
+      "state": "IN",
+      "country": "US",
+      "rankingMemberships": [
+        {
+          "source": "CS Open Rankings",
+          "rank": 47,
+          "top50": true,
+          "scope": "United States and Canada, aggregate of four ranking sources; US school within North American top 50",
+          "period": "Updated 2026",
+          "asOf": "2026-09-20",
+          "url": "https://drafty.cs.brown.edu/csopenrankings/",
+          "verificationMethod": "Direct table, default aggregate summing U.S. News, publication, placement and best-paper ranking numbers.",
+          "evidenceLevel": "ranking_publisher"
+        }
+      ],
+      "rankingVerification": "verified",
+      "shortlistStatus": "discovery_universe_verified",
+      "departments": [
+        {
+          "id": "notre-dame-cse",
+          "code": "CSE",
+          "name": "Computer Science and Engineering",
+          "sources": [
+            {
+              "url": "https://engineering.nd.edu/about-the-college/open-faculty-positions/",
+              "kind": "college_faculty_jobs",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence",
+              "note": "CS all-rank search described, but application link/year absent; verify before creating active job."
+            }
+          ]
+        },
+        {
+          "id": "notre-dame-ee",
+          "code": "EE",
+          "name": "Electrical Engineering",
+          "sources": [
+            {
+              "url": "https://engineering.nd.edu/about-the-college/open-faculty-positions/",
+              "kind": "college_faculty_jobs",
+              "official": true,
+              "verifiedAt": "2026-09-20",
+              "verificationMethod": "official page returned by web open/search",
+              "openingStatus": "not_inferred_from_hub_presence"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
