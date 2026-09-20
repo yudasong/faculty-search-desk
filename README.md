@@ -13,25 +13,24 @@ A private workspace for a faculty job search, organized as schools → departmen
 - Stores data in D1, provides JSON export, and rejects stale edits with optimistic concurrency.
 - Exposes seven WebMCP tools to read records, save links, stage research, update school sources, complete intake, record coverage, and change application workflow.
 
-## Run locally
+## Run locally (no hosting or sign-in)
 
-Requires Node.js 22.13+ and npm.
+Requires Node.js 22.13+ and npm (Node 24 recommended).
 
 ```sh
 npm ci
-npm run build
-node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0000_small_hex.sql
-npm run dev -- --hostname 127.0.0.1
+npm run local
 ```
 
-Open the printed URL, then choose **Sign in with ChatGPT**. On loopback development only, the starter supplies a mock user. It is never a production login. Local data is under the ignored `.wrangler/state` directory. The first successful authenticated API request claims ownership of the database.
+Open **http://127.0.0.1:5173/**. The launcher sets up the database, applies pending migrations, and runs the website only on your computer. No ChatGPT login, Cloudflare account, cloud database, or tunnel is required. Keep the terminal open while using it; Ctrl+C stops the server without deleting records. Use the same command to restart it. Port 5173 is fixed to preserve browser storage; if occupied, stop the other server first.
 
-```sh
-npx tsc --noEmit
-npm run build
-```
+School records and notes persist in the ignored `.local-data/state` directory. Back up `.local-data` while the server is stopped, or use the website's JSON export. Local records are separate from any hosted or development copy and do not synchronize automatically. Existing developer data under `.wrangler/state` is untouched.
 
-After schema changes, run `npm run db:generate` and apply only the new migration. Never replay or rewrite an applied migration.
+Click **API key**, enter your own key, and save it locally in your browser. Local mode never uses a key from your shell environment. Your browser sends the key to the loopback server on this computer; that server calls OpenAI over HTTPS. Only AI requests need internet access and API billing. A key previously saved on a hosted website or another hostname/port must be entered again because browser storage is separate for each origin.
+
+Local access is restricted to loopback hostnames and connections, and API requests reject cross-origin access. Do not expose this development server using port forwarding, a reverse proxy, or a tunnel. Hosted authentication is unchanged.
+
+For development with the original mock sign-in flow, `npm run dev -- --hostname 127.0.0.1` still uses `.wrangler/state`. `npm start` serves a built Worker and does not provide local sign-in; use `npm run local` for personal use. After schema changes, generate a new migration with `npm run db:generate`; the local launcher applies pending migrations automatically.
 
 ## Host your own private copy
 
@@ -45,7 +44,7 @@ Use **Add and analyze** to immediately analyze a hiring link and its application
 
 Click **API key** in the website, enter your own OpenAI key, and choose **Save key locally**. The password field clears after saving. The key is saved in localStorage for that browser profile and website origin; it is not synchronized across devices. **Forget key** removes it from this browser but does not revoke it at OpenAI or cancel work already started. LocalStorage is not an encrypted credential vault: browser-profile access or malicious same-origin scripts could expose it.
 
-The browser sends the key only in a dedicated header to this website’s authenticated API routes. The server uses it for the current request and forwards it only to the fixed OpenAI API endpoint; redirects are disabled. Keys are never written to D1, research results, data exports, source code, or application logs. An optional operator-managed `OPENAI_API_KEY` hosting secret remains supported as a fallback; a browser key takes precedence. Never put keys into chat, source code, or `.openai/hosting.json`. `OPENAI_RESEARCH_MODEL` is optional and defaults to `gpt-5.6-terra`; use a Responses model supporting background mode, web search, and structured outputs. API billing is separate from a ChatGPT subscription. A missing key produces a setup message and never pretends a search ran. For local development, put these values in an ignored `.env` file (see `.env.example`).
+The browser sends the key only in a dedicated header to this website’s authenticated API routes. The server uses it for the current request and forwards it only to the fixed OpenAI API endpoint; redirects are disabled. Keys are never written to D1, research results, data exports, source code, or application logs. An optional operator-managed `OPENAI_API_KEY` hosting secret remains supported as a fallback; a browser key takes precedence. Never put keys into chat, source code, or `.openai/hosting.json`. `OPENAI_RESEARCH_MODEL` is optional and defaults to `gpt-5.6-terra`; use a Responses model supporting background mode, web search, and structured outputs. API billing is separate from a ChatGPT subscription. A missing key produces a setup message and never pretends a search ran. For the separate development or hosted setup, these values can be configured in ignored environment files (see `.env.example`). The personal local launcher requires a browser-entered key.
 
 The authenticated server starts a stored background Responses API request and saves its response ID in D1. The website polls while open and resumes checking after reload. The provider can continue after the tab closes; importing findings into D1 happens when the website next polls with a usable key. Missing or changed browser keys preserve the saved response. Restore the original key or a key for the same OpenAI project and retry status. If a result is no longer accessible, **Stop tracking** releases the job so you can start again; it does not cancel provider work. Link analysis runs independently of broader searches and is bounded to 25 tool calls; broader searches allow 120 tool calls and 16,000 output tokens, not a guaranteed complete census. Coverage gaps, failed sources, and unprocessed links stay visible.
 

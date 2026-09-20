@@ -75,6 +75,15 @@ test('missing API key never starts a paid request', async t => {
   assert.equal(h.calls.length, 0); assert.equal(h.get('meta', 'research'), undefined);
 });
 
+test('local mode ignores environment keys and requires the browser key', async t => {
+  const h = harness(t); h.env.FACULTY_DESK_LOCAL_ONLY = '1';
+  await assert.rejects(h.api.startResearch('all'), /No search has started/);
+  assert.equal(h.calls.length, 0);
+  await h.api.startResearch('all', undefined, false, 'sk-browser-fixture-local-mode');
+  assert.equal(h.calls.length, 1);
+  assert.equal(h.calls[0].authorization, 'Bearer sk-browser-fixture-local-mode');
+});
+
 test('concurrent clicks start one request; private notes are excluded', async t => {
   const h = harness(t);
   await Promise.all([h.api.startResearch('all'), h.api.startResearch('all')]);

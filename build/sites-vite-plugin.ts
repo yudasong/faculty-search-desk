@@ -29,7 +29,7 @@ async function exists(path: string): Promise<boolean> {
   }
 }
 
-export function sites({ mockAuth = true } = {}): Plugin {
+export function sites({ mockAuth = true, localOnly = false } = {}): Plugin {
   let root = process.cwd();
   let command: "build" | "serve" = "build";
 
@@ -43,7 +43,7 @@ export function sites({ mockAuth = true } = {}): Plugin {
       if (!mockAuth) return;
       const secure = Boolean(server.config.server.https);
 
-      server.config.logger.info(`Sites local sign-in: ${localEmail}`);
+      server.config.logger.info(localOnly ? "Faculty Search Desk: local access, no sign-in required." : `Sites local sign-in: ${localEmail}`);
       server.middlewares.use((request, response, next) => {
         for (const name of Object.keys(request.headers)) {
           if (name.startsWith("oai-authenticated-user-")) {
@@ -59,7 +59,7 @@ export function sites({ mockAuth = true } = {}): Plugin {
           );
           url = new URL(request.url ?? "/", authority);
         } catch {
-          if (authPaths.has((request.url ?? "/").split("?")[0])) {
+          if (localOnly || authPaths.has((request.url ?? "/").split("?")[0])) {
             respond(response, 403);
           } else {
             next();
@@ -75,8 +75,18 @@ export function sites({ mockAuth = true } = {}): Plugin {
           !localAddresses.has(request.socket.remoteAddress ?? "") ||
           url.origin !== authority.origin
         ) {
-          if (authPaths.has(url.pathname)) respond(response, 403);
+          if (localOnly || authPaths.has(url.pathname)) respond(response, 403);
           else next();
+          return;
+        }
+
+        // Local access is granted only inside this loopback Vite server. Reject
+        // cross-origin API access before supplying the fixed local identity.
+        if (localOnly && (
+          (request.headers.origin && request.headers.origin !== url.origin) ||
+          (url.pathname.startsWith("/api/") && request.headers["sec-fetch-site"] === "cross-site")
+        )) {
+          respond(response, 403);
           return;
         }
 
@@ -105,13 +115,13 @@ export function sites({ mockAuth = true } = {}): Plugin {
         const signIn = url.pathname === "/signin-with-chatgpt";
         const signOut = url.pathname === "/signout-with-chatgpt";
         if (!signIn && !signOut) {
-          if (signInCookies.length === 1 && signInCookies[0] === "1") {
+          if (localOnly || (signInCookies.length === 1 && signInCookies[0] === "1")) {
             setHeader(request, "oai-authenticated-user-id", localUserId);
-            setHeader(request, "oai-authenticated-user-email", localEmail);
+            setHeader(request, "oai-authenticated-user-email", localOnly ? "local@localhost" : localEmail);
             setHeader(
               request,
               "oai-authenticated-user-full-name",
-              localFullName,
+              localOnly ? "Local desk" : localFullName,
             );
             setHeader(
               request,

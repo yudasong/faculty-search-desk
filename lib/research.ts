@@ -6,7 +6,7 @@ import type { Opening } from './types';
 
 export type ResearchScope = 'considering' | 'all' | 'link';
 type Job = { id: string; status: 'starting' | 'running' | 'blocked' | 'completed' | 'failed'; scope: ResearchScope; requestId?: string; sourceUrl?: string; startedAt: string; responseId?: string; browserKey?: boolean; schoolIds: string[]; requestIds: string[]; summary: string; error?: string; added?: number; updated?: number; checked?: number; gaps?: number; needsRetry?: boolean; revision?: number };
-const key = (apiKey?: string) => apiKey?.trim() || env.OPENAI_API_KEY?.trim();
+const key = (apiKey?: string) => apiKey?.trim() || (env.FACULTY_DESK_LOCAL_ONLY === '1' ? undefined : env.OPENAI_API_KEY?.trim());
 const model = () => env.OPENAI_RESEARCH_MODEL?.trim() || 'gpt-5.6-terra';
 const active = (job?: Job | null) => job?.status === 'starting' || job?.status === 'running' || job?.status === 'blocked';
 const getJob = async (recordId = 'research'): Promise<Job | null> => getRecord('meta', recordId);

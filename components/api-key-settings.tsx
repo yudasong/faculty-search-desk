@@ -19,7 +19,7 @@ export function ApiKeySettings({ open, onOpenChange }: { open: boolean; onOpenCh
   return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="api-key-dialog">
     <DialogTitle><KeyRound size={19} className="inline-key-icon"/> OpenAI API key</DialogTitle>
     <DialogDescription>Save your key in this browser to enable link analysis and Search now.</DialogDescription>
-    <p>The key stays in this browser’s local storage on this device. For AI requests, it is sent over HTTPS to this website’s server and then to OpenAI. The website does not save it in its database.</p>
+    <p>The key is saved in this browser’s local storage on this device. For AI requests, it passes through this website’s server to OpenAI over HTTPS. When running locally, that server is on your computer. The website does not save the key in its database.</p>
     <form onSubmit={e => {
       e.preventDefault(); setError('');
       try { saveBrowserApiKey(value); setValue(''); setNotice('Key saved in this browser. It will be checked when you use AI analysis.'); }
