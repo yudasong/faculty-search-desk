@@ -52,6 +52,8 @@ Jobs are atomically claimed to prevent duplicate paid requests for repeated subm
 
 The private research payload includes school names, department source URLs, known public posting identifiers, queued links, and role preferences. Personal notes and application workflow are not sent. Search and fetched content are untrusted data. Provider failures, refusals, and truncated outputs do not generate successful research records. An ambiguous start timeout is reported for manual review rather than automatically starting another paid request.
 
+Link analysis reads the source before asking the model to extract facts. Interfolio links use the public position-data endpoint that renders the posting, including its date metadata and full application instructions. The reader checks the exact posting ID, retains source-local deadline dates and Eastern time wording, and rejects substitutions from another posting or a department overview. Parsed portal closing dates are preserved even if the model omits them. Earlier review dates and track-specific exceptions are kept separately. General academic HTML pages include a full-text reading pass, JSON-LD, and separate date passages; truncation is recorded as incomplete coverage. A blocked Interfolio source stops before an AI request starts. Public source requests carry no API key or cookies. The same application URL updates the existing opening while retaining personal notes and application progress.
+
 Optional subscription-based research remains possible through the browser WebMCP tools and `docs/research-prompt.md`; run it only when requested. Disable any older daily automation separately when switching to on-demand use.
 
 ## Data and source policy

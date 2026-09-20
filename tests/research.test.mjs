@@ -49,16 +49,18 @@ function harness(t) {
   const records = kind => sql.prepare('SELECT data FROM records WHERE kind=?').all(kind).map(r => JSON.parse(r.data));
   const count = kind => sql.prepare('SELECT count(*) AS n FROM records WHERE kind=?').get(kind).n;
   put('meta', 'initialized', {}); put('school', school.id, school); put('settings', 'main', { scope: 'Tenure-track faculty' });
+  let sourceHandler = async url => url.startsWith('https://logic.interfolio.com/') ? Response.json({ position_id: 12345, landing_page_url: applicationUrl, position_name: 'Faculty search', institution: school.name, landing_page_description: 'Tenure-track faculty position across computer science. We welcome applications from candidates with a strong research and teaching record.', application_instructions: 'Submit a CV and research statement.', active_status: 'Open' }) : new Response('<title>Faculty search</title><p>Current faculty openings across computer science. Applications include a CV, research statement, teaching statement and letters of reference. See the linked official application portal for complete requirements and dates.</p>', { headers: { 'content-type': 'text/html' } });
   let calls = [], handler = async () => Response.json({ id: 'resp_fixture', status: 'queued' });
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async (url, init) => {
+    if (!String(url).startsWith('https://api.openai.com/')) { assert.equal(init.headers.Authorization, undefined); return sourceHandler(url, init); }
     assert.match(url, /^https:\/\/api\.openai\.com\/v1\/responses(?:\/resp_[\w-]+)?$/);
     assert.ok(init.headers.Authorization.startsWith('Bearer '));
     const call = { authorization: init.headers.Authorization, url, method: init.method, body: init.body && JSON.parse(init.body) }; calls.push(call);
     return handler(call);
   };
   t.after(() => { globalThis.fetch = originalFetch; sql.close(); });
-  return { add: load(resolve(root, 'lib/add-source.ts')).addSource, api: load(resolve(root, 'lib/research.ts')), result: load(resolve(root, 'lib/research-result.ts')), env, hooks, put, get, count, records, calls, respond: fn => { handler = fn; } };
+  return { add: load(resolve(root, 'lib/add-source.ts')).addSource, api: load(resolve(root, 'lib/research.ts')), result: load(resolve(root, 'lib/research-result.ts')), env, hooks, put, get, count, records, calls, sourceRespond: fn => { sourceHandler = fn; }, respond: fn => { handler = fn; } };
 }
 
 function complete(openings = [finding], extra = {}, evidence = [sourceUrl, applicationUrl]) {
@@ -68,6 +70,114 @@ function complete(openings = [finding], extra = {}, evidence = [sourceUrl, appli
     { type: 'message', content: [{ type: 'output_text', text: JSON.stringify(result) }] },
   ] });
 }
+
+const datedPortal = { position_id: 12345, landing_page_url: applicationUrl, position_name: 'Faculty Positions: All Tracks 2027', institution: school.name,
+  start_date: 'Aug 10, 2026', end_date: 'Dec 16, 2026', active_status: 'Open',
+  landing_page_description: '<p>Recruiting tenure, research, systems and teaching faculty across the school. LTI teaching applicants have an early review on October 23, 2026; this is conditional on the teaching track.</p>',
+  application_instructions: '<p>All materials are due December 16, 2026. Submit a CV, cover letter, research statement, teaching statement, three papers, broader impact statement, and reference contacts.</p>' };
+
+test('a complete portal supplies AI text and repairs an omitted deadline without web-search citations', async t => {
+  const h = harness(t); h.sourceRespond(() => Response.json(datedPortal));
+  h.put('request', 'link', { id: 'link', url: applicationUrl, status: 'Queued' });
+  h.put('opening', 'existing', { ...finding, id: 'existing', department: 'ML', notes: 'Keep my private notes', workflow: 'Preparing' });
+  await h.api.startResearch('link', 'link', false, browserKeyA);
+  const input = JSON.parse(h.calls[0].body.input);
+  assert.match(input.sourceDocuments[0].text, /December 16, 2026/);
+  assert.equal(input.sourceDocuments[0].closingDate, '2026-12-16');
+  assert.match(input.sourceDocuments[0].datePassages.join(' '), /October 23, 2026/);
+  assert.equal(h.calls[0].body.tool_choice, 'auto');
+  assert.equal(input.knownOpenings.length, 1);
+  assert.equal(h.get('meta', 'research-link-link').sources[0].text, undefined);
+  assert.equal(JSON.stringify(input).includes('Keep my private notes'), false);
+  h.respond(() => complete([{ ...finding, sourceUrl: applicationUrl, sourceRequestId: 'link' }], { inspectedUrls: [applicationUrl], completedRequestIds: ['link'] }, []));
+  await h.api.pollResearch('research-link-link', browserKeyA);
+  const saved = h.get('opening', 'existing');
+  assert.equal(h.count('opening'), 1, 'same application must update across department-label changes');
+  assert.equal(saved.deadline, '2026-12-16'); assert.equal(saved.hardDeadline, '2026-12-16');
+  assert.equal(saved.deadlineType, 'Application deadline');
+  assert.match(saved.deadlineText, /11:59 PM Eastern Time/);
+  assert.equal(saved.title, datedPortal.position_name); assert.equal(saved.sourceUrl, applicationUrl);
+  assert.equal(saved.notes, 'Keep my private notes'); assert.equal(saved.workflow, 'Preparing');
+  assert.equal(h.get('request', 'link').status, 'Researched');
+  assert.equal(h.get('meta', 'research-link-link').needsRetry, false);
+});
+
+test('a sibling portal or department hub cannot complete the requested individual posting', async t => {
+  const h = harness(t); h.sourceRespond(() => Response.json(datedPortal));
+  h.put('request', 'link', { id: 'link', url: applicationUrl, status: 'Queued' });
+  await h.api.startResearch('link', 'link');
+  const sibling = 'https://apply.interfolio.com/99999';
+  h.respond(() => complete([{ ...finding, sourceRequestId: 'link', applicationUrl: sibling }], { completedRequestIds: ['link'] }, [sourceUrl, applicationUrl, sibling]));
+  await h.api.pollResearch('research-link-link');
+  assert.equal(h.count('opening'), 0); assert.equal(h.get('request', 'link').status, 'Queued');
+  assert.equal(h.get('meta', 'research-link-link').needsRetry, true);
+});
+
+test('unreadable individual portal fails before any paid request and remains retryable', async t => {
+  const h = harness(t); h.sourceRespond(() => new Response('', { status: 503 }));
+  const result = await h.add(applicationUrl, browserKeyA);
+  assert.equal(result.analysis.status, 'failed'); assert.match(result.analysis.error, /No AI request was started/);
+  assert.equal(h.calls.length, 0); assert.equal(h.get('request', result.request.id).status, 'Queued');
+  h.sourceRespond(() => Response.json(datedPortal));
+  await h.api.startResearch('link', result.request.id, true, browserKeyA);
+  assert.equal(h.calls.length, 1);
+});
+
+test('an explicit reanalysis accepts a previously researched link', async t => {
+  const h = harness(t); h.sourceRespond(() => Response.json(datedPortal));
+  h.put('request', 'link', { id: 'link', url: applicationUrl, status: 'Researched' });
+  await h.api.startResearch('link', 'link'); assert.equal(h.calls.length, 0);
+  await h.api.startResearch('link', 'link', true); assert.equal(h.calls.length, 1);
+  assert.equal(JSON.parse(h.calls[0].body.input).queuedLinks[0].id, 'link');
+});
+
+test('correct application URL cannot disguise a finding from a different posting', async t => {
+  const h = harness(t); h.sourceRespond(() => Response.json(datedPortal));
+  h.put('request', 'link', { id: 'link', url: applicationUrl, status: 'Queued' });
+  await h.api.startResearch('link', 'link');
+  const sibling = 'https://apply.interfolio.com/99999';
+  h.respond(() => complete([{ ...finding, sourceUrl: sibling, sourceRequestId: 'link' }], { completedRequestIds: ['link'] }, [sibling, applicationUrl]));
+  await h.api.pollResearch('research-link-link');
+  assert.equal(h.count('opening'), 0); assert.equal(h.get('request', 'link').status, 'Queued');
+});
+
+test('an earlier applicable review deadline survives the authoritative final deadline', async t => {
+  const h = harness(t); h.sourceRespond(() => Response.json(datedPortal));
+  h.put('request', 'link', { id: 'link', url: applicationUrl, status: 'Queued' });
+  await h.api.startResearch('link', 'link');
+  h.respond(() => complete([{ ...finding, sourceUrl: applicationUrl, sourceRequestId: 'link', deadline: '2026-11-01', deadlineType: 'Full consideration deadline' }], { completedRequestIds: ['link'] }, [applicationUrl]));
+  await h.api.pollResearch('research-link-link');
+  assert.equal(h.records('opening')[0].deadline, '2026-11-01');
+  assert.equal(h.records('opening')[0].hardDeadline, '2026-12-16');
+});
+
+test('fully read no-match portal can complete; truncated HTML cannot', async t => {
+  const h = harness(t); h.sourceRespond(() => Response.json(datedPortal));
+  h.put('request', 'link', { id: 'link', url: applicationUrl, status: 'Queued' });
+  await h.api.startResearch('link', 'link');
+  h.respond(() => complete([], { completedRequestIds: ['link'], summary: 'No positions matching the requested role preferences.' }, [applicationUrl]));
+  await h.api.pollResearch('research-link-link');
+  assert.equal(h.get('request', 'link').status, 'Researched');
+  h.sourceRespond(() => new Response('<p>' + 'Faculty opening. '.repeat(5000) + '</p>', { headers: { 'content-type': 'text/html' } }));
+  h.put('request', 'html', { id: 'html', url: sourceUrl, status: 'Queued', schoolId: school.id });
+  h.respond(() => Response.json({ id: 'resp_fixture', status: 'queued' }));
+  await h.api.startResearch('link', 'html');
+  h.respond(() => complete([], { completedRequestIds: ['html'] }, [sourceUrl]));
+  await h.api.pollResearch('research-link-html');
+  assert.equal(h.get('request', 'html').status, 'Queued');
+  assert.equal(h.get('meta', 'research-link-html').needsRetry, true);
+});
+
+test('losing startup ownership during source reading cannot launch a paid request', async t => {
+  const h = harness(t);
+  h.put('request', 'link', { id: 'link', url: applicationUrl, status: 'Queued' });
+  h.sourceRespond(() => {
+    h.put('meta', 'research-link-link', { ...h.get('meta', 'research-link-link'), status: 'failed' });
+    return Response.json(datedPortal);
+  });
+  await h.api.startResearch('link', 'link');
+  assert.equal(h.calls.length, 0); assert.equal(h.get('meta', 'research-link-link').status, 'failed');
+});
 
 test('missing API key never starts a paid request', async t => {
   const h = harness(t); delete h.env.OPENAI_API_KEY;
@@ -146,7 +256,7 @@ test('queued portal links can resolve a school outside the shortlist', async t =
   h.put('request', 'link', { id: 'link', url: applicationUrl, status: 'Queued' });
   await h.api.startResearch('considering');
   const input = JSON.parse(h.calls[0].body.input); assert.equal(input.schoolsToSearch.length, 1); assert.equal(input.directoryForQueuedLinks.length, 2);
-  h.respond(() => complete([{ ...finding, schoolId: 'other', sourceRequestId: 'link' }], { completedRequestIds: ['link'] }));
+  h.respond(() => complete([{ ...finding, schoolId: 'other', sourceUrl: applicationUrl, sourceRequestId: 'link' }], { completedRequestIds: ['link'] }));
   await h.api.pollResearch(); assert.equal(h.count('opening'), 1); assert.equal(h.get('request', 'link').status, 'Researched');
 });
 

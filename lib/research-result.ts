@@ -58,8 +58,9 @@ export function departmentName(value: string, school: School) {
 }
 
 export function matchesOpening(old: Opening, found: ResearchResult['openings'][number]) {
-  if (old.schoolId !== found.schoolId || old.department.toLowerCase() !== found.department.toLowerCase()) return false;
+  if (old.schoolId !== found.schoolId) return false;
   if (found.applicationUrl && old.applicationUrl) return normalizedUrl(old.applicationUrl) === normalizedUrl(found.applicationUrl);
+  if (old.department.toLowerCase() !== found.department.toLowerCase()) return false;
   return normalizedUrl(old.sourceUrl) === normalizedUrl(found.sourceUrl) && old.title.trim().toLowerCase() === found.title.trim().toLowerCase();
 }
 

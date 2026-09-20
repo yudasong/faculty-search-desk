@@ -3,7 +3,7 @@ import { database, getRecord, readDesk } from './store';
 import { researchConfigured, startResearch } from './research';
 
 export async function addSource(url: string, apiKey?: string) {
-  // The AI reads the source. Save promptly rather than waiting for a second HTML fetch.
+  // Save first; research then fetches the complete source for the AI in one reading pass.
   const result = await intake(url, await readDesk(), false);
   if (!result.existing) {
     const date = new Date().toISOString();
