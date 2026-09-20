@@ -158,3 +158,8 @@ button,a,input,select,textarea { touch-action:manipulation; } button:not(:disabl
 .school-department-sources summary{font-size:1rem;font-weight:600;cursor:pointer;min-height:32px}
 .school-department-sources summary:focus-visible{outline:3px solid #92a8f4;outline-offset:3px}
 @media(max-width:600px){.detail-sheet{padding:28px 18px!important}.school-opening-card{padding:16px}.school-opening-dates{grid-template-columns:1fr}.school-opening-actions{gap:8px 12px}}
+
+.school-row-meta{display:inline-flex;align-items:center;gap:8px 12px;flex-wrap:wrap;min-width:0}
+.school-location{font-size:.875rem;line-height:1.4;color:#64718a}
+.school-list .school-row-meta .department-chips{margin:0}
+@media(max-width:760px){.school-row-meta{margin-top:5px;gap:5px 9px}.school-location{font-size:.875rem}}
