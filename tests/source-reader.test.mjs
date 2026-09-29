@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, resolve } from 'node:path';
 import ts from 'typescript';
+import { ajoHtml, ajoUrl, ethApply } from './fixtures/ajo.mjs';
 
 const require = createRequire(import.meta.url);
 const root = resolve(dirname(new URL(import.meta.url).pathname), '..');
@@ -13,9 +14,30 @@ function load(file) {
   new Function('require', 'module', 'exports', code)(id => id.startsWith('.') ? load(resolve(dirname(file), id + '.ts')) : require(id), module, module.exports);
   return module.exports;
 }
-const { calendarDate, parseInterfolio, readResearchSource } = load(resolve(root, 'lib/research-source.ts'));
+const { calendarDate, parseInterfolio, parseAjo, readResearchSource } = load(resolve(root, 'lib/research-source.ts'));
 const url = 'https://apply.interfolio.com/189576';
 const data = { position_id: 189576, landing_page_url: url, institution: 'Carnegie Mellon University: School of Computer Science', position_name: 'Faculty Positions: All Tracks 2027', start_date: 'Aug 10, 2026', end_date: 'Dec 16, 2026', active_status: 'Open', landing_page_description: 'Faculty opportunities across computer science. The teaching track has a separate early review date in October. This posting also includes research and tenure-track positions.' };
+
+test('AJO fields preserve exact identity, deadline, external Apply href and campus', () => {
+  const parsed = parseAjo(ajoHtml(), ajoUrl);
+  assert.equal(parsed.postingId, '32272'); assert.equal(parsed.title, 'Professors of AI foundations');
+  assert.equal(parsed.institution, 'ETH Zurich, Office for Faculty Affairs');
+  assert.equal(parsed.closingDate, '2026-09-30');
+  assert.equal(parsed.closingText, 'Application deadline: 2026/09/30 23:59:59 (time zone not stated)');
+  assert.equal(parsed.applicationUrl, ethApply); assert.equal(parsed.location, 'Heilbronn, Germany');
+  assert.equal(parsed.status, undefined, 'external routing must not imply Closed');
+  assert.equal(parsed.links.some(l => l.url.startsWith('javascript:')), false);
+  assert.throws(() => parseAjo(ajoHtml('99999'), ajoUrl), /different posting/);
+});
+
+test('AJO header dates on following lines and closing-date passages reach the model', async t => {
+  const original = globalThis.fetch; t.after(() => { globalThis.fetch = original; });
+  globalThis.fetch = async () => new Response(ajoHtml(), { headers: { 'content-type': 'text/html' } });
+  const source = await readResearchSource({ id: 'ajo', url: ajoUrl });
+  assert.equal(source.method, 'ajo'); assert.equal(source.complete, true);
+  assert.match(source.datePassages.join('\n'), /2026\/09\/30/);
+  assert.match(source.text, /leadership/); assert.equal(source.applicationUrl, ethApply);
+});
 
 test('portal metadata preserves exact posting, deadline year, and local date', () => {
   const parsed = parseInterfolio(data, url);

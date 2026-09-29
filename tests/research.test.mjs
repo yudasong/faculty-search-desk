@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, resolve } from 'node:path';
 import ts from 'typescript';
+import { ajoHtml, ajoUrl, ethApply } from './fixtures/ajo.mjs';
 
 const require = createRequire(import.meta.url);
 const root = resolve(dirname(new URL(import.meta.url).pathname), '..');
@@ -70,6 +71,90 @@ function complete(openings = [finding], extra = {}, evidence = [sourceUrl, appli
     { type: 'message', content: [{ type: 'output_text', text: JSON.stringify(result) }] },
   ] });
 }
+
+const ethSchool = { name: 'ETH Zurich', shortName: 'ETH Zurich', domain: 'ethz.ch', country: 'Switzerland', location: 'Zurich, Switzerland' };
+const ajoFinding = { ...finding, schoolId: '', newSchool: ethSchool, sourceRequestId: 'ajo', sourceUrl: ajoUrl, applicationUrl: ethApply,
+  department: 'CS / Mathematics', rank: 'Tenured', materials: 'CV; publications; cover letter; research, teaching and leadership statements; three achievements; highest-degree certificate.', location: 'Heilbronn, Germany' };
+async function startAjo(h) {
+  h.sourceRespond(() => new Response(ajoHtml(), { headers: { 'content-type': 'text/html' } }));
+  h.put('request', 'ajo', { id: 'ajo', url: ajoUrl, status: 'Queued' });
+  await h.api.startResearch('link', 'ajo', false, browserKeyA);
+}
+
+test('an international explicit posting creates a school and stages a complete entry atomically', async t => {
+  const h = harness(t); await startAjo(h);
+  const input = JSON.parse(h.calls[0].body.input);
+  assert.equal(input.sourceDocuments[0].applicationUrl, ethApply);
+  h.respond(() => complete([ajoFinding], { inspectedUrls: [ajoUrl], completedRequestIds: ['ajo'] }, []));
+  await Promise.all([h.api.pollResearch('research-link-ajo', browserKeyA), h.api.pollResearch('research-link-ajo', browserKeyA)]);
+  const saved = h.records('opening')[0], addedSchool = h.get('school', saved.schoolId);
+  assert.equal(h.count('school'), 2); assert.equal(h.count('opening'), 1); assert.equal(h.count('run'), 1);
+  assert.equal(addedSchool.name, 'ETH Zurich'); assert.equal(addedSchool.considering, false);
+  assert.equal(saved.workflow, 'Inbox'); assert.equal(saved.deadline, '2026-09-30'); assert.equal(saved.hardDeadline, '2026-09-30');
+  assert.equal(saved.title, 'Professors of AI foundations'); assert.equal(saved.location, 'Heilbronn, Germany');
+  assert.equal(saved.applicationUrl, ethApply); assert.equal(saved.hiringStatus, 'Open');
+  assert.match(saved.materials, /leadership/); assert.match(saved.materials, /highest-degree/);
+  assert.equal(saved.newSchool, undefined); assert.equal(h.get('request', 'ajo').status, 'Researched');
+  assert.equal(h.get('meta', 'research-link-ajo').needsRetry, false);
+  assert.equal(h.records('run')[0].sources.includes(ethApply), false, 'linked destinations are not falsely reported as read');
+  h.put('school', saved.schoolId, { ...addedSchool, notes: 'Keep school note', considering: true });
+  h.put('opening', saved.id, { ...saved, notes: 'Keep opening note', workflow: 'Preparing' });
+  h.respond(() => Response.json({ id: 'resp_retry', status: 'queued' }));
+  await h.api.startResearch('link', 'ajo', true, browserKeyA);
+  h.respond(() => complete([{ ...ajoFinding, department: 'Computer Science / Mathematics' }], { inspectedUrls: [ajoUrl], completedRequestIds: ['ajo'] }, []));
+  await h.api.pollResearch('research-link-ajo', browserKeyA);
+  assert.equal(h.count('school'), 2); assert.equal(h.count('opening'), 1);
+  assert.equal(h.get('opening', saved.id).notes, 'Keep opening note'); assert.equal(h.get('opening', saved.id).workflow, 'Preparing');
+  assert.equal(h.get('school', saved.schoolId).notes, 'Keep school note'); assert.equal(h.get('school', saved.schoolId).considering, true);
+});
+
+test('a portal cannot misassign an institution to a seeded school', async t => {
+  const h = harness(t); await startAjo(h);
+  h.respond(() => complete([{ ...ajoFinding, schoolId: school.id, newSchool: null }], { inspectedUrls: [ajoUrl], completedRequestIds: ['ajo'] }, []));
+  await h.api.pollResearch('research-link-ajo', browserKeyA);
+  assert.equal(h.count('opening'), 0); assert.equal(h.get('request', 'ajo').status, 'Queued');
+});
+
+test('new institutions need matching names and an official domain linked by the posting', async t => {
+  const h = harness(t); await startAjo(h);
+  h.respond(() => complete([{ ...ajoFinding, newSchool: { ...ethSchool, domain: 'fabricated.example' } }, { ...ajoFinding, newSchool: { ...ethSchool, name: 'Imaginary University', shortName: 'Imaginary' } }], { inspectedUrls: [ajoUrl], completedRequestIds: ['ajo'] }, []));
+  await h.api.pollResearch('research-link-ajo', browserKeyA);
+  assert.equal(h.count('school'), 1); assert.equal(h.count('opening'), 0); assert.equal(h.get('request', 'ajo').status, 'Queued');
+});
+
+test('AJO sibling findings cannot replace the requested posting even with a shared Apply URL', async t => {
+  const h = harness(t); await startAjo(h);
+  const sibling = 'https://academicjobsonline.org/ajo/jobs/99999';
+  h.respond(() => complete([{ ...ajoFinding, sourceUrl: sibling }], { inspectedUrls: [ajoUrl, sibling], completedRequestIds: ['ajo'] }, [sibling]));
+  await h.api.pollResearch('research-link-ajo', browserKeyA);
+  assert.equal(h.count('opening'), 0); assert.equal(h.get('request', 'ajo').status, 'Queued');
+  assert.equal(h.result.matchesOpening({ ...ajoFinding, schoolId: 'eth' }, { ...ajoFinding, schoolId: 'eth', sourceUrl: sibling }), false);
+});
+
+test('school creation rolls back with a failed opening import', async t => {
+  const h = harness(t); await startAjo(h);
+  h.respond(() => complete([ajoFinding], { inspectedUrls: [ajoUrl], completedRequestIds: ['ajo'] }, []));
+  h.hooks.failAt = 1;
+  await assert.rejects(h.api.pollResearch('research-link-ajo', browserKeyA), /Injected storage failure/);
+  assert.equal(h.count('school'), 1); assert.equal(h.count('opening'), 0);
+  h.hooks.failAt = -1; await h.api.pollResearch('research-link-ajo', browserKeyA);
+  assert.equal(h.count('school'), 2); assert.equal(h.count('opening'), 1);
+});
+
+test('an unknown Interfolio institution can be resolved using official links in the posting', async t => {
+  const h = harness(t);
+  h.sourceRespond(() => Response.json({ ...datedPortal, institution: 'ETH Zurich',
+    application_instructions: '<p>Submit CV, publications and research statement. See <a href="https://ethz.ch/faculty">ETH faculty information</a>.</p>' }));
+  h.put('request', 'link', { id: 'link', url: applicationUrl, status: 'Queued' });
+  await h.api.startResearch('link', 'link', false, browserKeyA);
+  h.respond(() => complete([{ ...finding, schoolId: '', newSchool: ethSchool, sourceRequestId: 'link', sourceUrl: applicationUrl,
+    deadlineText: 'Deadline: Dec 16, 2026 at 11:59 PM Eastern Time. Earlier review is conditional.' }], { inspectedUrls: [applicationUrl], completedRequestIds: ['link'] }, []));
+  await h.api.pollResearch('research-link-link', browserKeyA);
+  const saved = h.records('opening')[0];
+  assert.equal(h.get('school', saved.schoolId).domain, 'ethz.ch');
+  assert.equal(saved.applicationUrl, applicationUrl); assert.equal(h.get('request', 'link').status, 'Researched');
+  assert.equal(saved.deadlineText.match(/Dec 16, 2026/g).length, 1);
+});
 
 const datedPortal = { position_id: 12345, landing_page_url: applicationUrl, position_name: 'Faculty Positions: All Tracks 2027', institution: school.name,
   start_date: 'Aug 10, 2026', end_date: 'Dec 16, 2026', active_status: 'Open',
@@ -151,13 +236,13 @@ test('an earlier applicable review deadline survives the authoritative final dea
   assert.equal(h.records('opening')[0].hardDeadline, '2026-12-16');
 });
 
-test('fully read no-match portal can complete; truncated HTML cannot', async t => {
+test('explicit individual postings cannot be filtered out; truncated HTML cannot complete', async t => {
   const h = harness(t); h.sourceRespond(() => Response.json(datedPortal));
   h.put('request', 'link', { id: 'link', url: applicationUrl, status: 'Queued' });
   await h.api.startResearch('link', 'link');
   h.respond(() => complete([], { completedRequestIds: ['link'], summary: 'No positions matching the requested role preferences.' }, [applicationUrl]));
   await h.api.pollResearch('research-link-link');
-  assert.equal(h.get('request', 'link').status, 'Researched');
+  assert.equal(h.get('request', 'link').status, 'Queued');
   h.sourceRespond(() => new Response('<p>' + 'Faculty opening. '.repeat(5000) + '</p>', { headers: { 'content-type': 'text/html' } }));
   h.put('request', 'html', { id: 'html', url: sourceUrl, status: 'Queued', schoolId: school.id });
   h.respond(() => Response.json({ id: 'resp_fixture', status: 'queued' }));

@@ -2,10 +2,12 @@ import { canonical } from './intake';
 
 export type SourceReceipt = {
   requestId: string; url: string; retrievedUrl?: string; retrievedAt: string;
-  method: 'interfolio' | 'html'; readable: boolean; complete: boolean;
+  method: 'interfolio' | 'ajo' | 'html'; readable: boolean; complete: boolean;
   title?: string; institution?: string; postingId?: string; error?: string;
   openDate?: string; closingDate?: string; closingText?: string;
   status?: 'Open' | 'Closed';
+  location?: string; applicationUrl?: string;
+  links?: { label: string; url: string }[];
 };
 export type SourceDocument = SourceReceipt & { text: string; datePassages: string[] };
 
@@ -14,9 +16,32 @@ export function interfolioId(url: string) {
   return u.hostname === 'apply.interfolio.com' ? u.pathname.match(/^\/(\d+)\/?$/)?.[1] : undefined;
 }
 
+export function ajoId(url: string) {
+  const u = new URL(canonical(url));
+  return u.hostname === 'academicjobsonline.org' ? u.pathname.match(/^\/ajo\/jobs\/(\d+)\/?$/)?.[1] : undefined;
+}
+
+export const individualPosting = (url: string) => !!(interfolioId(url) || ajoId(url));
+
 export function samePosting(a: string, b: string) {
   const id = interfolioId(a);
-  return id ? id === interfolioId(b) : canonical(a) === canonical(b);
+  const ajo = ajoId(a);
+  return id ? id === interfolioId(b) : ajo ? ajo === ajoId(b) : canonical(a) === canonical(b);
+}
+
+// Keep destinations beside link labels; a displayed address can differ from its href.
+export function sourceLinks(html: string, base: string) {
+  const links: { label: string; url: string }[] = [];
+  const body = html.replace(/<(script|style|nav|footer)\b[^>]*>[\s\S]*?<\/\1>/gi, ' ');
+  for (const match of body.matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
+    try {
+      const url = canonical(new URL(sourcePlainText(match[1]), base).toString());
+      const label = sourcePlainText(match[2]);
+      if (label && !links.some(l => l.url === url && l.label === label)) links.push({ label: label.slice(0, 500), url });
+    } catch { /* Non-HTTPS links are not application destinations. */ }
+    if (links.length === 200) break;
+  }
+  return links;
 }
 
 function allowed(url: string) {
@@ -91,17 +116,42 @@ export function parseInterfolio(data: any, url: string) {
     closingText || `Deadline: ${sourcePlainText(data.end_date) || 'Not stated'}`, `Status: ${sourcePlainText(data.active_status)}`,
     'Description', description, 'Qualifications', sourcePlainText(data.qualifications), 'Application Instructions', instructions].join('\n');
   if (text.length > 70000) throw new Error('The posting exceeds the full-text reading limit.');
-  return { title, institution, postingId: id, openDate, closingDate, closingText, text,
+  const links = sourceLinks([data.landing_page_description, data.qualifications, data.application_instructions].filter(v => typeof v === 'string').join('\n'), url);
+  return { title, institution, postingId: id, openDate, closingDate, closingText, text, links,
     status: data.active_status === 'Open' ? 'Open' as const : data.active_status === 'Closed' || data.is_closed === true ? 'Closed' as const : undefined };
+}
+
+export function parseAjo(html: string, url: string) {
+  const id = ajoId(url);
+  const field = (label: string) => sourcePlainText(html.match(new RegExp('<div[^>]*>\\s*<b>' + label + ':<\\/b>[\\s\\S]*?<\\/div>\\s*<div[^>]*>([\\s\\S]*?)<\\/div>', 'i'))?.[1]);
+  if (!id || !field('Position ID').includes('[#' + id + ']')) throw new Error('The portal returned a different posting.');
+  const title = field('Position Title'), institution = sourcePlainText(html.match(/<h2[^>]*>([\s\S]*?)<\/h2>/i)?.[1]);
+  const text = sourcePlainText(html);
+  if (!title || !institution || !html.includes('Position Description') || text.length < 200) throw new Error('The portal did not return the full posting.');
+  if (text.length > 70000) throw new Error('The posting exceeds the full-text reading limit.');
+  const links = sourceLinks(html, url);
+  const rawDeadline = field('Appl Deadline').split(/\(posted/i)[0].trim();
+  const date = rawDeadline.match(/^(\d{4})\/(\d{2})\/(\d{2})\b/);
+  const closingDate = date ? calendarDate(date.slice(1).join('-')) : undefined;
+  // The portal does not identify a time zone. Never infer one from the campus location.
+  const closingText = closingDate ? `Application deadline: ${rawDeadline} (time zone not stated)` : undefined;
+  const applicationUrl = links.find(l => /^apply(?:\s|$)/i.test(l.label))?.url;
+  return { postingId: id, title, institution, text, links, applicationUrl, closingDate, closingText,
+    location: field('Position Location').replace(/\s*\[\s*map\s*\].*$/i, '').trim() };
 }
 
 export async function readResearchSource(request: { id: string; url: string }): Promise<SourceDocument> {
   const url = canonical(request.url), id = interfolioId(url);
-  const base: SourceReceipt = { requestId: request.id, url, retrievedAt: new Date().toISOString(), method: id ? 'interfolio' : 'html', readable: false, complete: false };
+  const base: SourceReceipt = { requestId: request.id, url, retrievedAt: new Date().toISOString(), method: id ? 'interfolio' : ajoId(url) ? 'ajo' : 'html', readable: false, complete: false };
   try {
     const retrieved = await page(id ? `https://logic.interfolio.com/dossier-api/positions/${id}` : url);
     if (id) {
       const posting = parseInterfolio(JSON.parse(retrieved.body), url);
+      return { ...base, ...posting, retrievedUrl: retrieved.url, readable: true, complete: true, datePassages: datePassages(posting.text) };
+    }
+    if (base.method === 'ajo') {
+      if (!samePosting(url, retrieved.url)) throw new Error('The portal redirected to a different posting.');
+      const posting = parseAjo(retrieved.body, url);
       return { ...base, ...posting, retrievedUrl: retrieved.url, readable: true, complete: true, datePassages: datePassages(posting.text) };
     }
     // Preserve JSON-LD and date passages independently so metadata near the end is not lost.
@@ -109,14 +159,14 @@ export async function readResearchSource(request: { id: string; url: string }): 
     const fullText = sourcePlainText(retrieved.body) + (structured ? '\nStructured page data:\n' + structured : '');
     if (fullText.length < 200 || /enable javascript|checking your browser|just a moment/i.test(fullText.slice(0, 250))) throw new Error('The source returned a page shell instead of readable posting content.');
     return { ...base, retrievedUrl: retrieved.url, readable: true, complete: fullText.length <= 70000,
-      title: sourcePlainText(retrieved.body.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]), text: fullText.slice(0, 70000), datePassages: datePassages(fullText) };
+      title: sourcePlainText(retrieved.body.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]), links: sourceLinks(retrieved.body, retrieved.url), text: fullText.slice(0, 70000), datePassages: datePassages(fullText) };
   } catch (error) {
     return { ...base, error: error instanceof Error && error.message.length < 150 ? error.message : 'The source could not be read.', text: '', datePassages: [] };
   }
 }
 
 function datePassages(text: string) {
-  return [...text.matchAll(/.{0,180}(?:deadline|full consideration|early (?:round|review)|review.{0,30}begin|must be submitted|open date|validThrough).{0,600}/gi)].slice(0, 40).map(m => m[0]);
+  return [...text.matchAll(/.{0,180}(?:deadline|closing date|full consideration|early (?:round|review)|review.{0,30}begin|must be submitted|open date|validThrough)[\s\S]{0,600}/gi)].slice(0, 40).map(m => m[0]);
 }
 
 export function sourceReceipt({ text: _text, datePassages: _passages, ...receipt }: SourceDocument): SourceReceipt { return receipt; }

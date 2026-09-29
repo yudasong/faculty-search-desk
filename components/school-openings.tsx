@@ -24,6 +24,7 @@ export function SchoolOpenings({ openings, onEdit }: { openings: Opening[]; onEd
         </dl>
         {opening.deadlineText && <p className="school-opening-date-note">{opening.deadlineText}</p>}
         <dl className="school-opening-requirements">
+          {opening.location && <div><dt>Position location</dt><dd>{opening.location}</dd></div>}
           <div><dt>Required materials</dt><dd>{opening.materials || 'Not stated in the saved record.'}</dd></div>
           <div><dt>Letters / references</dt><dd>{opening.letters || 'Not stated in the saved record.'}</dd></div>
         </dl>

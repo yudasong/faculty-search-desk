@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { Opening, School } from './types';
+import { individualPosting, samePosting } from './research-source';
 
 const text = z.string().max(12000);
 const short = z.string().max(500);
@@ -16,6 +17,8 @@ export const researchResult = z.object({
   gaps: z.array(text).max(150),
   openings: z.array(z.object({
     schoolId: short, sourceRequestId: short.nullable(), department: short, title: short.min(1),
+    newSchool: z.object({ name: short.min(1), shortName: short.min(1), domain: short.min(1), country: short, location: short }).strict().nullable().default(null),
+    location: short.nullable().default(null),
     sourceUrl: https, applicationUrl: https.nullable(),
     deadline: date, deadlineType: short.nullable(), deadlineText: text.nullable(),
     hardDeadline: date, rank: short.nullable(), areas: text.nullable(),
@@ -36,6 +39,8 @@ export const resultJsonSchema = object({
   gaps: { type: 'array', items: str },
   openings: { type: 'array', items: object({
     schoolId: str, sourceRequestId: nullable, department: str, title: str, sourceUrl: str, applicationUrl: nullable,
+    newSchool: { anyOf: [object({ name: str, shortName: str, domain: str, country: str, location: str }), { type: 'null' }] },
+    location: nullable,
     deadline: nullable, deadlineType: nullable, deadlineText: nullable, hardDeadline: nullable,
     rank: nullable, areas: nullable, materials: nullable, letters: nullable, summary: str,
     hiringStatus: { type: 'string', enum: ['Open', 'Closed', 'Unverified'] },
@@ -59,6 +64,8 @@ export function departmentName(value: string, school: School) {
 
 export function matchesOpening(old: Opening, found: ResearchResult['openings'][number]) {
   if (old.schoolId !== found.schoolId) return false;
+  // Separate advertisements can share a university's generic Apply page.
+  if (individualPosting(old.sourceUrl) && individualPosting(found.sourceUrl)) return samePosting(old.sourceUrl, found.sourceUrl);
   if (found.applicationUrl && old.applicationUrl) return normalizedUrl(old.applicationUrl) === normalizedUrl(found.applicationUrl);
   if (old.department.toLowerCase() !== found.department.toLowerCase()) return false;
   return normalizedUrl(old.sourceUrl) === normalizedUrl(found.sourceUrl) && old.title.trim().toLowerCase() === found.title.trim().toLowerCase();
@@ -73,7 +80,7 @@ export function officialSource(url: string, school: School) {
 // Null means not established. Never erase previously known requirements or a user's workflow.
 export function openingPatch(found: ResearchResult['openings'][number], checkedAt: string) {
   return {
-    ...Object.fromEntries(Object.entries(found).filter(([k, v]) => k !== 'sourceRequestId' && v !== null && v !== '' && !(k === 'hiringStatus' && v === 'Unverified'))),
+    ...Object.fromEntries(Object.entries(found).filter(([k, v]) => !['sourceRequestId', 'newSchool'].includes(k) && v !== null && v !== '' && !(k === 'hiringStatus' && v === 'Unverified'))),
     checkedAt, verification: 'AI source check · review details', sourceKind: 'On-demand API research',
   };
 }

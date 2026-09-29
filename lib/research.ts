@@ -4,8 +4,9 @@ import { hash } from './intake';
 import { decodeResearch, departmentName, matchesOpening, normalizedUrl, officialSource, openingPatch, providerSourceUrls, resultJsonSchema } from './research-result';
 import type { Opening } from './types';
 import { openAIResponse, ProviderError } from './openai-provider';
-import { readResearchSource, sourceReceipt, samePosting, type SourceDocument, type SourceReceipt } from './research-source';
+import { readResearchSource, sourceReceipt, samePosting, individualPosting, type SourceDocument, type SourceReceipt } from './research-source';
 import { researchInstructions } from './research-prompt';
+import { institutionMatches, schoolFromPosting } from './research-school';
 
 export type ResearchScope = 'considering' | 'all' | 'link';
 type Job = { id: string; status: 'starting' | 'running' | 'blocked' | 'completed' | 'failed'; scope: ResearchScope; requestId?: string; sourceUrl?: string; startedAt: string; responseId?: string; browserKey?: boolean; schoolIds: string[]; requestIds: string[]; sources?: SourceReceipt[]; summary: string; error?: string; added?: number; updated?: number; checked?: number; gaps?: number; needsRetry?: boolean; revision?: number };
@@ -69,8 +70,8 @@ export async function startResearch(scope: ResearchScope, requestId?: string, re
     await updateJob(job, { sources: sourceDocuments.map(sourceReceipt) });
     job = (await getJob(jobRecordId))!;
     if (job.id !== next.id || job.status !== 'starting') return researchStatus(apiKey);
-    const unreadablePortal = sourceDocuments.find(s => s.method === 'interfolio' && !s.readable);
-    if (scope === 'link' && unreadablePortal) throw new Error(`Could not read the actual Interfolio posting: ${unreadablePortal.error} No AI request was started. Your link is saved; retry analysis when the source is available.`);
+    const unreadablePortal = sourceDocuments.find(s => individualPosting(s.url) && !s.readable);
+    if (scope === 'link' && unreadablePortal) throw new Error(`Could not read the actual posting: ${unreadablePortal.error} No AI request was started. Your link is saved; retry analysis when the source is available.`);
     const response = await provider('', {
       model: model(), background: true, store: true, reasoning: { effort: 'medium' },
       tools: [{ type: 'web_search' }], tool_choice: scope === 'link' && sourceDocuments.every(s => s.readable && s.complete) ? 'auto' : 'required', max_tool_calls: scope === 'link' ? 25 : 120,
@@ -145,19 +146,33 @@ export async function pollResearch(jobRecordId = 'research', apiKey?: string) {
   for (const item of result.openings) {
     const queuedSource = desk.requests.find(r => r.id === item.sourceRequestId && job.requestIds.includes(r.id) && inspected.includes(normalizedUrl(r.url)));
     const source = (job.sources || []).find(s => s.requestId === (queuedSource?.id || job.requestId));
-    if (source?.method === 'interfolio' && (!source.readable || !source.complete ||
-      !samePosting(source.url, item.sourceUrl) || (item.applicationUrl && !samePosting(source.url, item.applicationUrl)))) {
+    if (source && individualPosting(source.url) && (!source.readable || !source.complete ||
+      !samePosting(source.url, item.sourceUrl) || (source.method === 'interfolio' && item.applicationUrl && !samePosting(source.url, item.applicationUrl)))) {
       gaps.push(`${item.title}: not imported because it does not establish the exact requested posting.`);
       excludedRequests.add(source.requestId);
       continue;
     }
-    const school = desk.schools.find(s => s.id === item.schoolId && (job.schoolIds.includes(s.id) || queuedSource));
+    let school = desk.schools.find(s => s.id === item.schoolId && (job.schoolIds.includes(s.id) || queuedSource));
+    let createdSchool = false;
+    if (!school && queuedSource) {
+      const proposed = await schoolFromPosting(item, source);
+      if (proposed) {
+        school = desk.schools.find(s => s.domain.toLowerCase().replace(/^www\./, '') === proposed.domain);
+        if (!school) { school = proposed; createdSchool = true; }
+      }
+    }
+    if (school && source?.method === 'ajo' && !institutionMatches(source.institution || '', school)) {
+      gaps.push(`${item.title}: the selected school does not match the institution named by the posting.`);
+      excludedRequests.add(source.requestId); continue;
+    }
     if (!school || !inspected.includes(normalizedUrl(item.sourceUrl)) || !officialSource(item.sourceUrl, school)) { gaps.push(`${item.title}: not imported because its school or official source evidence could not be confirmed.`); if (queuedSource) excludedRequests.add(queuedSource.id); continue; }
-    const found = { ...item, department: departmentName(item.department, school) };
-    if (source?.method === 'interfolio' && source.readable) {
+    const found = { ...item, schoolId: school.id, department: departmentName(item.department, school) };
+    if (source && individualPosting(source.url) && source.readable) {
       found.title = source.title!;
       found.sourceUrl = source.url;
-      found.applicationUrl = source.url;
+      if (source.method === 'interfolio') found.applicationUrl = source.url;
+      else if (source.applicationUrl) found.applicationUrl = source.applicationUrl;
+      if (source.location) found.location = source.location;
       if (source.status) found.hiringStatus = source.status;
       // A parsed date from this exact public posting cannot be dropped by model output.
       if (source.closingDate) {
@@ -168,17 +183,27 @@ export async function pollResearch(jobRecordId = 'research', apiKey?: string) {
           found.deadline = source.closingDate;
           found.deadlineType = 'Application deadline';
         }
-        found.deadlineText = [source.closingText, found.deadlineText].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join('\n');
+        if (!source.closingText || !found.deadlineText?.includes(source.closingText)) {
+          found.deadlineText = [source.closingText, found.deadlineText].filter(Boolean).join('\n');
+        }
       }
     }
-    if (found.applicationUrl && (!evidence.has(normalizedUrl(found.applicationUrl)) || !officialSource(found.applicationUrl, school))) {
+    const linkedApplication = !!found.applicationUrl && !!source?.readable && source.complete && samePosting(source.url, found.sourceUrl) &&
+      (source.links || []).some(l => normalizedUrl(l.url) === normalizedUrl(found.applicationUrl!));
+    if (found.applicationUrl && ((!evidence.has(normalizedUrl(found.applicationUrl)) && !linkedApplication) || (!officialSource(found.applicationUrl, school) && source?.applicationUrl !== found.applicationUrl))) {
       gaps.push(`${item.title}: the application URL was omitted because its source evidence could not be confirmed.`);
       found.applicationUrl = null;
     }
     const old = desk.openings.find(o => matchesOpening(o, found));
-    const id = old?.id || await hash(found.schoolId + '|' + found.department.toLowerCase() + '|' + normalizedUrl(found.applicationUrl || found.sourceUrl) + (found.applicationUrl ? '' : '|' + found.title.trim().toLowerCase()));
+    const identityUrl = individualPosting(found.sourceUrl) ? found.sourceUrl : found.applicationUrl || found.sourceUrl;
+    const id = old?.id || await hash(found.schoolId + '|' + (individualPosting(found.sourceUrl) ? '' : found.department.toLowerCase()) + '|' + normalizedUrl(identityUrl) + (found.applicationUrl || individualPosting(found.sourceUrl) ? '' : '|' + found.title.trim().toLowerCase()));
     const patch = openingPatch(found, date.slice(0, 10));
     const record = { id, applicationUrl: '', deadline: '', deadlineType: 'Unknown', deadlineText: '', hardDeadline: '', rank: 'Unknown', areas: '', materials: '', letters: '', hiringStatus: 'Unverified', workflow: 'Inbox', notes: '', ...patch } as Opening;
+    if (createdSchool) {
+      // Another concurrent link may have created this school; never reset its shortlist or notes.
+      write('school', school.id, school, {});
+      desk.schools.push(school);
+    }
     write('opening', id, record, patch);
     if (queuedSource) importedRequests.set(queuedSource.id, school.id);
     if (old) updated++; else added++;
@@ -188,7 +213,11 @@ export async function pollResearch(jobRecordId = 'research', apiKey?: string) {
     const request = desk.requests.find(r => r.id === id && job.requestIds.includes(id));
     if (!request || !inspected.includes(normalizedUrl(request.url))) continue;
     const source = (job.sources || []).find(s => s.requestId === id);
-    if (excludedRequests.has(id) || (source?.readable && !source.complete) || (source?.method === 'interfolio' && (!source.readable || !source.complete))) continue;
+    if (individualPosting(request.url) && !importedRequests.has(id)) {
+      gaps.push(`${request.url}: the posting was not imported; search preferences cannot exclude an explicitly added link.`);
+      continue;
+    }
+    if (excludedRequests.has(id) || (source?.readable && !source.complete) || (source && individualPosting(source.url) && (!source.readable || !source.complete))) continue;
     completedIds.add(id);
     const requestPatch = { status: 'Researched', error: '', ...(source?.title ? { title: source.title } : {}), ...(importedRequests.has(id) ? { schoolId: importedRequests.get(id) } : {}) };
     write('request', id, { ...request, ...requestPatch }, requestPatch);
