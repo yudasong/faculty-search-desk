@@ -15,6 +15,7 @@ export const researchResult = z.object({
   completedRequestIds: z.array(short).max(100),
   inspectedUrls: z.array(https).max(300),
   gaps: z.array(text).max(150),
+  sourceReviews: z.array(z.object({ url: https, outcome: z.enum(['openings', 'no_openings', 'irrelevant', 'blocked']), openingUrls: z.array(https).max(100), departments: z.array(short).max(20).default([]), reason: text }).strict()).max(100).default([]),
   openings: z.array(z.object({
     schoolId: short, sourceRequestId: short.nullable(), department: short, title: short.min(1),
     newSchool: z.object({ name: short.min(1), shortName: short.min(1), domain: short.min(1), country: short, location: short }).strict().nullable().default(null),
@@ -37,6 +38,7 @@ export const resultJsonSchema = object({
   completedRequestIds: { type: 'array', items: str },
   inspectedUrls: { type: 'array', items: str },
   gaps: { type: 'array', items: str },
+  sourceReviews: { type: 'array', items: object({ url: str, outcome: { type: 'string', enum: ['openings', 'no_openings', 'irrelevant', 'blocked'] }, openingUrls: { type: 'array', items: str }, departments: { type: 'array', items: str }, reason: str }) },
   openings: { type: 'array', items: object({
     schoolId: str, sourceRequestId: nullable, department: str, title: str, sourceUrl: str, applicationUrl: nullable,
     newSchool: { anyOf: [object({ name: str, shortName: str, domain: str, country: str, location: str }), { type: 'null' }] },
