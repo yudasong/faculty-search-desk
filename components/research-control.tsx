@@ -4,6 +4,7 @@ import { Radar, RefreshCw, AlertCircle, Check, KeyRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
+import { RESEARCH_AREA_LABEL } from '@/lib/research-scope';
 import { browserApiKey, keyChangedEvent, researchFetch } from '@/lib/browser-api-key';
 
 type SchoolProgress = { schoolId: string; attempt: number; name: string; status: 'pending' | 'running' | 'completed' | 'partial' | 'failed' | 'blocked'; summary?: string; issues?: string[]; sources?: { url: string; readable: boolean; complete: boolean; error?: string }[]; added?: number; updated?: number };
@@ -120,7 +121,7 @@ export function ResearchControl({ considering, total, schools = [], revision, on
     </details>}
     <Dialog open={open} onOpenChange={value => !busy && setOpen(value)}><DialogContent>
       <DialogTitle>{running ? 'Search in progress' : 'Search for faculty openings'}</DialogTitle>
-      <DialogDescription>Check each school's official hiring pages and linked postings. New findings go to your review inbox; your notes and application progress are preserved.</DialogDescription>
+      <DialogDescription>{RESEARCH_AREA_LABEL}. Check each school's official hiring pages and linked postings. New findings go to your review inbox; your notes and application progress are preserved.</DialogDescription>
       {!state ? <><p>{error || 'Checking search setup…'}</p><Button variant="outline" onClick={() => request().catch(e => setError(e.message))}>Check setup</Button></> : !state.configured ? <div className="search-setup"><h3>Add your API key</h3><p>Enter your OpenAI key and save it in this browser to enable AI analysis. No search has started.</p><Button onClick={() => { setOpen(false); onOpenKeySettings(); }}><KeyRound size={16}/> Enter API key</Button></div> : running ? <p>Research is already running. Return to the school list while it checks sources.</p> : <>
         <label className="field"><span>Schools to search</span><NativeSelect aria-label="Research school scope" value={scope} onChange={e => setScope(e.target.value)}><option value="considering">My shortlist ({considering} schools)</option><option value="all">Full discovery pool ({total} schools)</option>{schools.length > 0 && <option value="selected">Specific school</option>}</NativeSelect></label>
         {scope === 'selected' && <label className="field"><span>School</span><NativeSelect aria-label="School to research" value={selectedSchool} onChange={e => setSelectedSchool(e.target.value)}><option value="">Choose a school</option>{[...schools].sort((a, b) => a.name.localeCompare(b.name)).map(school => <option value={school.id} key={school.id}>{school.name}</option>)}</NativeSelect></label>}

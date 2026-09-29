@@ -1,3 +1,4 @@
+import { researchAreaTerms } from './research-scope';
 import { canonical } from './intake';
 import { readResearchSource, postingPage, type SourceDocument } from './research-source';
 import type { Opening, School } from './types';
@@ -64,7 +65,7 @@ function candidates(document: SourceDocument) {
     if (pagination(target, page, useful.join(' '))) { results.push({ url, priority: 2 }); continue; }
     // Numeric portal destinations and explicit faculty advertisements are useful
     // even if the link label is only "View Details" or the page title is generic.
-    if (postingPage(url)) { results.push({ url, priority: 1 }); continue; }
+    if (postingPage(url)) { results.push({ url, priority: researchAreaTerms.test(description) ? 0.5 : 1 }); continue; }
     const hiringPath = /(?:facult[y]|careers?|employment|job[-_]?opportunit|academic[-_]?positions|faculty[-_]?search|recruit(?:ment|ing)|open[-_]?positions)/i.test(target.pathname);
     const positionTitle = /\b(?:(?:assistant|associate|full|visiting|research|teaching) professor|professorship|tenure[-\s–]?track|open[-\s]?rank|lecturer)\b/i.test(description);
     const instructions = /\b(?:(?:application|applicant) (?:instructions|requirements|materials|process|information)|how to apply)\b/i.test(description);

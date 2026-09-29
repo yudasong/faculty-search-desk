@@ -5,6 +5,7 @@ import { decodeResearch, departmentName, matchesOpening, normalizedUrl, official
 import type { Opening } from './types';
 import { openAIResponse, ProviderError } from './openai-provider';
 import { readResearchSource, sourceReceipt, samePosting, individualPosting, type SourceDocument, type SourceReceipt } from './research-source';
+import { scopeEvidenceIssue } from './research-scope';
 import { researchInstructions } from './research-prompt';
 import { institutionMatches, schoolFromPosting } from './research-school';
 import { discoverSchoolSources } from './research-discovery';
@@ -12,7 +13,7 @@ import { assessSchoolCoverage, importedPostingAliases, type DepartmentCheck } fr
 
 export type ResearchScope = 'considering' | 'all' | 'link' | 'school';
 export type Job = { id: string; status: 'starting' | 'running' | 'blocked' | 'completed' | 'failed'; scope: ResearchScope; requestId?: string; sourceUrl?: string; startedAt: string; responseId?: string; browserKey?: boolean; schoolIds: string[]; requestIds: string[]; sources?: SourceReceipt[]; summary: string; error?: string; added?: number; updated?: number; checked?: number; gaps?: number; needsRetry?: boolean; revision?: number;
-  recordKey?: string; documents?: SourceDocument[]; departments?: DepartmentCheck[]; sourceIssues?: string[]; verificationPass?: boolean; coverageIssues?: string[]; uncertainStart?: boolean; dispatchBlocked?: boolean; sourceReviews?: ReturnType<typeof decodeResearch>['sourceReviews']; importedUrls?: string[] };
+  scopePolicyVersion?: number; recordKey?: string; documents?: SourceDocument[]; departments?: DepartmentCheck[]; sourceIssues?: string[]; verificationPass?: boolean; coverageIssues?: string[]; uncertainStart?: boolean; dispatchBlocked?: boolean; sourceReviews?: ReturnType<typeof decodeResearch>['sourceReviews']; importedUrls?: string[] };
 const key = (apiKey?: string) => apiKey?.trim() || (env.FACULTY_DESK_LOCAL_ONLY === '1' ? undefined : env.OPENAI_API_KEY?.trim());
 const model = () => env.OPENAI_RESEARCH_MODEL?.trim() || 'gpt-5.6-terra';
 const active = (job?: Job | null) => job?.status === 'starting' || job?.status === 'running' || job?.status === 'blocked';
@@ -63,7 +64,7 @@ export async function startResearch(scope: ResearchScope, requestId?: string, re
   // Saved links can refer to schools outside the selected list.
   for (const r of requests) { const s = desk.schools.find(s => s.id === r.schoolId); if (s && !schools.some(x => x.id === s.id)) schools.push(s); }
   if (!schools.length && !requests.length) throw new Error('Select a school or save a link before searching.');
-  const next: Job = { id: crypto.randomUUID(), status: 'starting', scope, browserKey: !!apiKey, ...(schoolTask ? { recordKey: schoolTask.recordKey } : {}), ...(requestId ? { requestId, sourceUrl: requests[0].url } : {}), startedAt: new Date().toISOString(), schoolIds: schools.map(s => s.id), requestIds: requests.map(r => r.id), summary: 'Starting research…' };
+  const next: Job = { id: crypto.randomUUID(), status: 'starting', scope, browserKey: !!apiKey, ...(schoolTask ? { recordKey: schoolTask.recordKey, scopePolicyVersion: 1 } : {}), ...(requestId ? { requestId, sourceUrl: requests[0].url } : {}), startedAt: new Date().toISOString(), schoolIds: schools.map(s => s.id), requestIds: requests.map(r => r.id), summary: 'Starting research…' };
   const db = database();
   const claim = await db.prepare(`INSERT INTO records(id,kind,data,revision,updated_at) VALUES(?,'meta',?,1,?)
     ON CONFLICT(id) DO UPDATE SET data=excluded.data,revision=records.revision+1,updated_at=excluded.updated_at
@@ -202,6 +203,11 @@ export async function pollResearch(jobRecordId = 'research', apiKey?: string) {
     const source = job.scope === 'school' ? (job.sources || []).find(s => [s.url, s.retrievedUrl].filter(Boolean).some(u => normalizedUrl(u!) === normalizedUrl(item.sourceUrl))) : (job.sources || []).find(s => s.requestId === (queuedSource?.id || job.requestId));
     if (job.scope === 'school' && (!source?.readable || !source.complete)) {
       gaps.push(`${item.title}: posting was not imported because its full source could not be read (${item.sourceUrl}).`); continue;
+    }
+    if (job.scope === 'school' && job.scopePolicyVersion === 1) {
+      const document = job.documents?.find(d => d.url === source?.url);
+      const issue = scopeEvidenceIssue(item, document);
+      if (issue) { gaps.push(`${item.title}: not imported because ${issue}.`); continue; }
     }
     if (source && individualPosting(source.url) && (!source.readable || !source.complete ||
       !samePosting(source.url, item.sourceUrl) || (source.method === 'interfolio' && item.applicationUrl && !samePosting(source.url, item.applicationUrl)))) {

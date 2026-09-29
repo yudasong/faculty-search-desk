@@ -24,7 +24,7 @@ test('a model checked-school claim without source assessments stays partial', as
 
 test('search-discovered candidates are directly read before a single claimed extraction pass', async t => {
   const h = setup(t); const sourcesRead = [];
-  h.sourceRespond(url => { sourcesRead.push(url); return new Response(page('Faculty search', '<p>Application deadline: November 30, 2026. Submit CV, research and teaching statements.</p>'), { headers: { 'content-type': 'text/html' } }); });
+  h.sourceRespond(url => { sourcesRead.push(url); return new Response(page('Faculty search in Computer Science', '<p>Application deadline: November 30, 2026. Submit CV, research and teaching statements.</p>'), { headers: { 'content-type': 'text/html' } }); });
   await h.api.startSchoolResearch(school.id, 'school-test', key);
   const reviews = [review(sourceUrl, 'openings', [posting]), review(posting, 'openings', [posting])];
   h.respond(call => call.method === 'POST' ? Response.json({ id: 'resp_verify', status: 'queued' }) : complete([{ ...finding, sourceUrl: posting, applicationUrl: null }], { sourceReviews: reviews, inspectedUrls: [sourceUrl, posting] }, [posting]));

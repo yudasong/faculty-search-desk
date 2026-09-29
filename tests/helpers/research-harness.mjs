@@ -10,7 +10,7 @@ const root = resolve(dirname(new URL(import.meta.url).pathname), '../..');
 const school = { id: 'example', name: 'Example University', domain: 'example.edu', considering: true, departments: ['CS'], sources: [], notes: 'private school note' };
 const sourceUrl = 'https://example.edu/cs/jobs';
 const applicationUrl = 'https://apply.interfolio.com/12345';
-const finding = { schoolId: school.id, sourceRequestId: null, department: 'CS', title: 'Faculty search', sourceUrl, applicationUrl, deadline: null, deadlineType: null, deadlineText: null, hardDeadline: null, rank: null, areas: null, materials: null, letters: null, summary: 'Current faculty hiring.', hiringStatus: 'Open' };
+const finding = { scopeEvidence: { area: 'CS', quote: 'computer science', reason: 'Computer science is the advertised hiring area.' }, schoolId: school.id, sourceRequestId: null, department: 'CS', title: 'Faculty search', sourceUrl, applicationUrl, deadline: null, deadlineType: null, deadlineText: null, hardDeadline: null, rank: null, areas: null, materials: null, letters: null, summary: 'Current faculty hiring.', hiringStatus: 'Open' };
 
 function harness(t) {
   const sql = new DatabaseSync(':memory:');
