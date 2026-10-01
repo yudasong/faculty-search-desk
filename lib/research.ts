@@ -1,7 +1,7 @@
 import { env } from 'cloudflare:workers';
 import { database, getRecord, readDesk } from './store';
 import { hash } from './intake';
-import { decodeResearch, departmentName, matchesOpening, normalizedUrl, officialSource, openingPatch, providerSourceUrls, resultJsonSchema } from './research-result';
+import { decodeResearch, departmentName, matchesArchivedOpening, matchesOpening, normalizedUrl, officialSource, openingPatch, providerSourceUrls, resultJsonSchema, userArchived } from './research-result';
 import type { Opening } from './types';
 import { openAIResponse, ProviderError } from './openai-provider';
 import { readResearchSource, sourceReceipt, samePosting, individualPosting, type SourceDocument, type SourceReceipt } from './research-source';
@@ -191,9 +191,15 @@ export async function pollResearch(jobRecordId = 'research', apiKey?: string) {
   // Every write, including the completion marker, shares one atomic batch and the same job revision guard.
   const guard = "EXISTS(SELECT 1 FROM records WHERE id=? AND revision=?)";
   const statements: D1PreparedStatement[] = [];
-  const write = (kind: string, id: string, data: unknown, patch: unknown = data) => statements.push(db.prepare(`INSERT INTO records(id,kind,data,revision,updated_at) SELECT ?,?,?,1,? WHERE ${guard}
-    ON CONFLICT(id) DO UPDATE SET data=json_patch(records.data,?),revision=records.revision+1,updated_at=excluded.updated_at`).bind(kind + ':' + id, kind, JSON.stringify(data), date, 'meta:' + recordId(job), job.revision, JSON.stringify(patch)));
-  let added = 0, updated = 0;
+  const write = (kind: string, id: string, data: unknown, patch: unknown = data, archiveMatches: Opening[] = []) => {
+    const ids = [...new Set(archiveMatches.map(o => 'opening:' + o.id))];
+    // Recheck within the atomic import: archiving while an API response is being
+    // processed must win, including a dismissed draft with a different ID.
+    const archiveGuard = ids.length ? ` AND NOT EXISTS(SELECT 1 FROM records WHERE id IN (${ids.map(() => '?').join(',')}) AND json_extract(data,'$.workflow')='Archived' AND (json_extract(data,'$.archiveReason')='user' OR (COALESCE(json_extract(data,'$.archiveReason'),'')!='resolved-draft' AND COALESCE(json_extract(data,'$.verification'),'') NOT LIKE 'Draft%')))` : '';
+    statements.push(db.prepare(`INSERT INTO records(id,kind,data,revision,updated_at) SELECT ?,?,?,1,? WHERE ${guard}${archiveGuard}
+      ON CONFLICT(id) DO UPDATE SET data=json_patch(records.data,?),revision=records.revision+1,updated_at=excluded.updated_at`).bind(kind + ':' + id, kind, JSON.stringify(data), date, 'meta:' + recordId(job), job.revision, ...ids, JSON.stringify(patch)));
+  };
+  let added = 0, updated = 0, archived = 0;
   const completedIds = new Set<string>();
   const importedRequests = new Map<string, string>();
   const importedUrls: string[] = [];
@@ -257,7 +263,15 @@ export async function pollResearch(jobRecordId = 'research', apiKey?: string) {
       gaps.push(`${item.title}: the application URL was omitted because its source evidence could not be confirmed.`);
       found.applicationUrl = null;
     }
-    const old = desk.openings.find(o => matchesOpening(o, found));
+    const archiveMatches = desk.openings.filter(o => matchesArchivedOpening(o, found));
+    const dismissed = archiveMatches.find(userArchived);
+    if (dismissed) {
+      archived++;
+      importedUrls.push(found.sourceUrl, item.sourceUrl, dismissed.sourceUrl, ...importedPostingAliases(job.sources || [], found.applicationUrl));
+      if (queuedSource) importedRequests.set(queuedSource.id, school.id);
+      continue;
+    }
+    const old = desk.openings.find(o => !(o.workflow === 'Archived' && o.verification?.startsWith('Draft')) && matchesOpening(o, found));
     const identityUrl = individualPosting(found.sourceUrl) ? found.sourceUrl : found.applicationUrl || found.sourceUrl;
     const id = old?.id || await hash(found.schoolId + '|' + (individualPosting(found.sourceUrl) ? '' : found.department.toLowerCase()) + '|' + normalizedUrl(identityUrl) + (found.applicationUrl || individualPosting(found.sourceUrl) ? '' : '|' + found.title.trim().toLowerCase()));
     const patch = openingPatch(found, date.slice(0, 10));
@@ -267,7 +281,7 @@ export async function pollResearch(jobRecordId = 'research', apiKey?: string) {
       write('school', school.id, school, {});
       desk.schools.push(school);
     }
-    write('opening', id, record, patch);
+    write('opening', id, record, patch, archiveMatches);
     importedUrls.push(found.sourceUrl, item.sourceUrl, ...(old ? [old.sourceUrl] : []), ...importedPostingAliases(job.sources || [], found.applicationUrl));
     if (queuedSource) importedRequests.set(queuedSource.id, school.id);
     if (old) updated++; else added++;
@@ -286,7 +300,7 @@ export async function pollResearch(jobRecordId = 'research', apiKey?: string) {
     const requestPatch = { status: 'Researched', error: '', ...(source?.title ? { title: source.title } : {}), ...(importedRequests.has(id) ? { schoolId: importedRequests.get(id) } : {}) };
     write('request', id, { ...request, ...requestPatch }, requestPatch);
     const draftId = 'opening:intake-' + id;
-    statements.push(db.prepare(`UPDATE records SET data=json_set(data,'$.workflow','Archived','$.summary','Research completed. See the research history and opening records.'),revision=revision+1,updated_at=? WHERE id=? AND json_extract(data,'$.workflow')='Inbox' AND json_extract(data,'$.verification') LIKE 'Draft%' AND ${guard}`).bind(date, draftId, 'meta:' + recordId(job), job.revision));
+    statements.push(db.prepare(`UPDATE records SET data=json_set(data,'$.workflow','Archived','$.archiveReason','resolved-draft','$.summary','Research completed. See the research history and opening records.'),revision=revision+1,updated_at=? WHERE id=? AND json_extract(data,'$.workflow')='Inbox' AND json_extract(data,'$.verification') LIKE 'Draft%' AND ${guard}`).bind(date, draftId, 'meta:' + recordId(job), job.revision));
   }
   for (const id of job.requestIds) if (!completedIds.has(id)) gaps.push(`Saved link still awaiting verification: ${desk.requests.find(r => r.id === id)?.url || id}`);
   const targetSchool = desk.schools.find(s => s.id === job.schoolIds[0]);
@@ -296,7 +310,7 @@ export async function pollResearch(jobRecordId = 'research', apiKey?: string) {
   if (job.scope === 'school' && !coverageIssues.length) checkedIds.add(job.schoolIds[0]);
   const finalGaps = job.scope === 'school' ? coverageIssues : gaps;
   const coverage = job.scope === 'link' ? `${completedIds.size}/${job.requestIds.length} links analyzed.` : job.scope === 'school' ? `${checkedIds.size}/1 schools verified against fetched sources.` : `${checkedIds.size}/${job.schoolIds.length} schools reported checked.`;
-  const summary = `${added} new, ${updated} updated openings. ${coverage} ${result.summary}`;
+  const summary = `${added} new, ${updated} updated openings.${archived ? ` ${archived} archived findings kept out of the inbox.` : ''} ${coverage} ${result.summary}`;
   write('run', job.id, { id: job.id, date, summary, checked: inspected.length, newOpenings: added, failures: finalGaps, sources: inspected });
   const done = { ...job, documents: undefined, ...(job.scope === 'school' ? { sourceReviews: result.sourceReviews, importedUrls } : {}), status: 'completed', error: undefined, summary, added, updated, checked: inspected.length, gaps: finalGaps.length, coverageIssues: job.scope === 'school' ? coverageIssues : undefined, needsRetry: coverageIssues.length > 0 || job.requestIds.some(id => !completedIds.has(id)) }; delete done.revision;
   statements.push(db.prepare('UPDATE records SET data=?,revision=revision+1,updated_at=? WHERE id=? AND revision=?').bind(JSON.stringify(done), date, 'meta:' + recordId(job), job.revision));

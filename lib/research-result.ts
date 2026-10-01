@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { Opening, School } from './types';
-import { individualPosting, samePosting } from './research-source';
+import { individualPosting, postingPage, samePosting } from './research-source';
 
 const text = z.string().max(12000);
 const short = z.string().max(500);
@@ -66,13 +66,48 @@ export function departmentName(value: string, school: School) {
   return school.departments.find(d => d.toLowerCase() === canonical.toLowerCase()) || canonical;
 }
 
-export function matchesOpening(old: Opening, found: ResearchResult['openings'][number]) {
+type OpeningIdentity = Pick<Opening, 'schoolId' | 'department' | 'title' | 'sourceUrl'> & { applicationUrl?: string | null };
+function postingIdentity(value?: string | null) {
+  if (!value) return '';
+  const url = new URL(normalizedUrl(value));
+  if (!postingPage(value) && !/\/(?:JPF|REQ[_-]?|R)\d+(?:\/|$)/i.test(url.pathname)) return '';
+  url.pathname = url.pathname.replace(/\/pre_apply\/?$/, '').replace(/\/$/, '');
+  if (individualPosting(value)) url.search = '';
+  return url.toString();
+}
+
+export function matchesOpening(old: OpeningIdentity, found: OpeningIdentity) {
   if (old.schoolId !== found.schoolId) return false;
-  // Separate advertisements can share a university's generic Apply page.
-  if (individualPosting(old.sourceUrl) && individualPosting(found.sourceUrl)) return samePosting(old.sourceUrl, found.sourceUrl);
-  if (found.applicationUrl && old.applicationUrl) return normalizedUrl(old.applicationUrl) === normalizedUrl(found.applicationUrl);
+  const oldSource = postingIdentity(old.sourceUrl), newSource = postingIdentity(found.sourceUrl);
+  if (oldSource && oldSource === newSource) return true;
+  // Different IDs at the same portal are separate advertisements, even when
+  // both point at a generic university-wide Apply page.
+  if (individualPosting(old.sourceUrl) && individualPosting(found.sourceUrl) && new URL(old.sourceUrl).hostname === new URL(found.sourceUrl).hostname)
+    return samePosting(old.sourceUrl, found.sourceUrl);
+  const oldApply = postingIdentity(old.applicationUrl), newApply = postingIdentity(found.applicationUrl);
+  if ((oldApply && (oldApply === newSource || oldApply === newApply)) || (newApply && newApply === oldSource)) return true;
+  if (oldSource && newSource) return false;
   if (old.department.toLowerCase() !== found.department.toLowerCase()) return false;
-  return normalizedUrl(old.sourceUrl) === normalizedUrl(found.sourceUrl) && old.title.trim().toLowerCase() === found.title.trim().toLowerCase();
+  const sameTitle = old.title.trim().toLowerCase() === found.title.trim().toLowerCase();
+  return sameTitle && (normalizedUrl(old.sourceUrl) === normalizedUrl(found.sourceUrl) ||
+    (!!old.applicationUrl && !!found.applicationUrl && normalizedUrl(old.applicationUrl) === normalizedUrl(found.applicationUrl)));
+}
+
+export function userArchived(opening: Opening) {
+  // Successful link analysis also archives its temporary draft. Those records
+  // are bookkeeping, not a request to hide the resulting faculty positions.
+  return opening.workflow === 'Archived' && (opening.archiveReason === 'user' ||
+    (opening.archiveReason !== 'resolved-draft' && !opening.verification?.startsWith('Draft')));
+}
+
+export function matchesArchivedOpening(old: Opening, found: OpeningIdentity) {
+  if (old.verification?.startsWith('Draft')) {
+    // A user can dismiss an intake card while its analysis is still running.
+    // Only an exact individual posting is a blanket dismissal, never a hub.
+    return !!postingIdentity(old.sourceUrl) && postingIdentity(old.sourceUrl) === postingIdentity(found.sourceUrl) &&
+      (old.schoolId === found.schoolId || old.schoolId === 'unassigned');
+  }
+  return matchesOpening(old, found);
 }
 
 export function officialSource(url: string, school: School) {

@@ -59,7 +59,7 @@ function harness(t) {
     return handler(call);
   };
   t.after(() => { globalThis.fetch = originalFetch; sql.close(); });
-  return { sweep: load(resolve(root, 'lib/research-sweep.ts')), coverage: load(resolve(root, 'lib/research-coverage.ts')), add: load(resolve(root, 'lib/add-source.ts')).addSource, api: load(resolve(root, 'lib/research.ts')), result: load(resolve(root, 'lib/research-result.ts')), env, hooks, put, get, count, records, calls, sourceRespond: fn => { sourceHandler = fn; }, respond: fn => { handler = fn; } };
+  return { workflow: load(resolve(root, 'lib/opening-workflow.ts')), sweep: load(resolve(root, 'lib/research-sweep.ts')), coverage: load(resolve(root, 'lib/research-coverage.ts')), add: load(resolve(root, 'lib/add-source.ts')).addSource, api: load(resolve(root, 'lib/research.ts')), result: load(resolve(root, 'lib/research-result.ts')), env, hooks, put, get, count, records, calls, sourceRespond: fn => { sourceHandler = fn; }, respond: fn => { handler = fn; } };
 }
 
 function complete(openings = [finding], extra = {}, evidence = [sourceUrl, applicationUrl]) {

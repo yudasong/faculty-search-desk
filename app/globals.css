@@ -163,3 +163,6 @@ button,a,input,select,textarea { touch-action:manipulation; } button:not(:disabl
 .school-location{font-size:.875rem;line-height:1.4;color:#64718a}
 .school-list .school-row-meta .department-chips{margin:0}
 @media(max-width:760px){.school-row-meta{margin-top:5px;gap:5px 9px}.school-location{font-size:.875rem}}
+
+/* Review actions remain usable when an archive control adds another button. */
+.card-bottom{flex-wrap:wrap}.card-bottom .actions{flex-wrap:wrap}

@@ -64,6 +64,8 @@ AcademicJobsOnline links additionally preserve the exact advertisement ID, title
 
 Optional subscription-based research remains possible through the browser WebMCP tools and `docs/research-prompt.md`; run it only when requested. Disable any older daily automation separately when switching to on-demand use.
 
+Use **Archive** directly on a review-inbox card to dismiss that posting. Future research skips matching archived postings, including recognized posting aliases, and preserves dismissals made while an analysis is finishing. Existing archived records are respected; automatically retired link-intake drafts do not count as dismissals. Distinct posting IDs remain eligible. In **Openings**, select **Archived** and choose **Restore to inbox** to reverse the decision.
+
 ## Data and source policy
 
 The ranking scope is a sourced union: include US schools in the top 50 of any selected credible CS ranking and include ties. The initial directory is a September 20, 2026 snapshot, not a permanently current or exhaustive ranking. Some U.S. News membership is reported by CS Open Rankings with the original edition unspecified; those records say so. Research area and time-window choices change rankings.
