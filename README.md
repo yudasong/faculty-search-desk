@@ -66,6 +66,8 @@ Optional subscription-based research remains possible through the browser WebMCP
 
 Use **Archive** directly on a review-inbox card to dismiss that posting. Future research skips matching archived postings, including recognized posting aliases, and preserves dismissals made while an analysis is finishing. Existing archived records are respected; automatically retired link-intake drafts do not count as dismissals. Distinct posting IDs remain eligible. In **Openings**, select **Archived** and choose **Restore to inbox** to reverse the decision.
 
+Search progress distinguishes schools processed from complete source coverage. The banner uses the current review-inbox count; cumulative imports and updates across retries are labeled separately in School results. Completed link analyses are collapsible. Discovery skips non-hiring profile/directory/giving links and application sign-in forms while retaining explicit hiring announcements, posting pages, and pagination. Historical coverage gaps remain recorded until a new check resolves them.
+
 ## Data and source policy
 
 The ranking scope is a sourced union: include US schools in the top 50 of any selected credible CS ranking and include ties. The initial directory is a September 20, 2026 snapshot, not a permanently current or exhaustive ranking. Some U.S. News membership is reported by CS Open Rankings with the original edition unspecified; those records say so. Research area and time-window choices change rankings.

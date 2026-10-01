@@ -124,6 +124,36 @@ test('faculty titles and full advertisements do not need a numeric portal or car
   assert.ok(result.documents.some(d => d.url.endsWith('/submission-checklist') && /teaching statement/.test(d.text)));
 });
 
+test('faculty navigation and award news do not consume the hiring crawl budget', async t => {
+  const hub = 'https://example.edu/hiring';
+  const noise = [
+    ['/cds-faculty/stay-connected/giving/', 'Giving'], ['/cds-faculty/stay-connected/news/', 'News'],
+    ['/cds-faculty/explore/about/', 'Learn more'], ['/people/faculty/', 'Faculty'],
+    ['/news/assistant-professor-wins-career-award', 'Assistant Professor wins CAREER award'],
+    ['/faculty-office/faculty-development/orientation.html', 'Faculty orientation'],
+    ...Array.from({ length: 20 }, (_, i) => [`/cds-faculty/profile/person-${i}`, `Professor Person ${i}`]),
+  ];
+  const links = noise.map(([url, label]) => `<a href="${url}">${label}</a>`).join('') +
+    '<a href="/cs/faculty-hiring">Faculty hiring</a><a href="/news/faculty-search">Applications open: Assistant Professor in CS</a>';
+  const calls = mockPages(t, new Map([[hub, page('Faculty recruitment', links)],
+    ['https://example.edu/cs/faculty-hiring', page('Faculty hiring')],
+    ['https://example.edu/news/faculty-search', page('Assistant Professor in Computer Science')],
+  ]));
+  const result = await discoverSchoolSources(schoolAt(hub), []);
+  assert.equal(calls.length, 3); assert.deepEqual(result.issues, []);
+  assert.ok(calls.includes('https://example.edu/news/faculty-search'));
+});
+
+test('Caltech-style application forms are skipped while public advertisements are read', async t => {
+  const hub = 'https://example.edu/hiring', ad = 'https://example.edu/jobs/358';
+  const calls = mockPages(t, new Map([[hub, page('Faculty positions', '<a href="/jobs/358">Assistant Professor in CS</a>')],
+    [ad, page('Assistant Professor', '<a href="/jobs/358/applies/new">Apply now</a><a href="/jobs/358/applies/start">Start application</a>')],
+  ]));
+  const result = await discoverSchoolSources(schoolAt(hub), [{ id: 'saved', schoolId: 'example', department: 'CS', workflow: 'Considering', sourceUrl: ad, applicationUrl: ad + '/applies/new' }]);
+  assert.deepEqual(new Set(calls), new Set([hub, ad]));
+  assert.deepEqual(result.issues, []);
+});
+
 test('source text and link truncation both prevent full-coverage claims', async t => {
   const hub = 'https://example.edu/faculty-jobs';
   const manyLinks = Array.from({ length: 201 }, (_, i) => `<a href="/about/${i}">About ${i}</a>`).join('');

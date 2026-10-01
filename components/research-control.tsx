@@ -10,9 +10,9 @@ import { browserApiKey, keyChangedEvent, researchFetch } from '@/lib/browser-api
 type SchoolProgress = { schoolId: string; attempt: number; name: string; status: 'pending' | 'running' | 'completed' | 'partial' | 'failed' | 'blocked'; summary?: string; issues?: string[]; sources?: { url: string; readable: boolean; complete: boolean; error?: string }[]; added?: number; updated?: number };
 type Job = { id: string; status: string; summary: string; error?: string; added?: number; updated?: number; gaps?: number; needsRetry?: boolean; schoolCount: number; requestId?: string; sourceUrl?: string; schools?: SchoolProgress[]; completedSchools?: number; totalSchools?: number; legacyCoverage?: boolean };
 type State = { configured: boolean; job: Job | null; links: Job[]; errors?: string[] };
-const schoolStatus: Record<SchoolProgress['status'], string> = { pending: 'Waiting', running: 'Searching', completed: 'Sources verified', partial: 'Coverage gaps', failed: 'Failed', blocked: 'Needs attention' };
+const schoolStatus: Record<SchoolProgress['status'], string> = { pending: 'Waiting', running: 'Searching', completed: 'Coverage complete', partial: 'Coverage gaps', failed: 'Failed', blocked: 'Needs attention' };
 function sourceHost(value?: string) { try { return value ? new URL(value).hostname : 'Saved link'; } catch { return value || 'Saved link'; } }
-export function ResearchControl({ considering, total, schools = [], revision, onConfigured, onComplete, onOpenKeySettings }: { considering: number; total: number; queued: number; schools?: { id: string; name: string }[]; revision: number; onConfigured: (value: boolean) => void; onComplete: () => Promise<unknown>; onOpenKeySettings: () => void }) {
+export function ResearchControl({ considering, total, inboxCount, schools = [], revision, onConfigured, onComplete, onOpenKeySettings }: { considering: number; total: number; queued: number; inboxCount: number; schools?: { id: string; name: string }[]; revision: number; onConfigured: (value: boolean) => void; onComplete: () => Promise<unknown>; onOpenKeySettings: () => void }) {
   const [state, setState] = useState<State | null>(null);
   const [open, setOpen] = useState(false), [scope, setScope] = useState('considering');
   const [selectedSchool, setSelectedSchool] = useState('');
@@ -29,8 +29,10 @@ export function ResearchControl({ considering, total, schools = [], revision, on
   const totalSchools = job?.totalSchools ?? job?.schools?.length ?? job?.schoolCount ?? 0;
   const processedSchools = job?.schools?.filter(school => ['completed', 'partial', 'failed'].includes(school.status)).length ?? 0;
   const waitingSchools = job?.schools?.filter(school => school.status === 'pending').length ?? 0;
+  const partialSchools = job?.schools?.filter(school => school.status === 'partial').length ?? 0;
+  const failedSchools = job?.schools?.filter(school => school.status === 'failed').length ?? 0;
   const coverageGaps = !!job && (legacyCoverage || job.needsRetry || ['failed', 'blocked'].includes(job.status) || job.schools?.some(school => ['partial', 'failed', 'blocked'].includes(school.status)) || (job.status === 'completed' && verifiedSchools < totalSchools));
-  const coverageLabel = legacyCoverage ? 'Previous search coverage is unverified.' : `Verified sources for ${verifiedSchools}/${totalSchools} schools.`;
+  const coverageLabel = legacyCoverage ? 'Previous search coverage is unverified.' : `${partialSchools} with coverage gaps; ${failedSchools} failed.`;
   const request = useCallback(async (body?: unknown) => {
     const version = credentialVersion.current;
     const control = controlVersion.current;
@@ -91,6 +93,13 @@ export function ResearchControl({ considering, total, schools = [], revision, on
       if (!fresh?.links.some(job => job.requestId === requestId && job.error === message)) setError(message);
     } finally { setBusy(false); }
   }
+  const linkStatus = (job: Job) => <div key={job.id} className={'search-progress' + (job.status === 'failed' ? ' has-error' : '')} role="status">
+    {['starting', 'running'].includes(job.status) ? <RefreshCw size={17} className="search-spinner"/> : job.status === 'completed' && !job.needsRetry ? <Check size={17}/> : <AlertCircle size={17}/>}
+    <span><a href={job.sourceUrl} target="_blank" rel="noreferrer">{sourceHost(job.sourceUrl)}</a>: {job.error || (job.status === 'completed' ? `${job.needsRetry ? 'Analysis finished with gaps.' : 'Analysis complete.'} ${job.added || 0} new, ${job.updated || 0} updated openings.${job.gaps ? ' Review coverage issues in Research history.' : ' Saved entries updated.'}` : 'AI is reading the page and its application links…')}</span>
+    {(job.status === 'failed' || job.status === 'completed') && <Button variant="ghost" size="sm" disabled={busy || !state?.configured} onClick={() => analyze(job.requestId)}>{job.status === 'completed' && !job.needsRetry ? 'Re-analyze' : 'Retry analysis'}</Button>}
+    {job.status === 'blocked' && <><Button variant="ghost" size="sm" disabled={!state?.configured} onClick={() => request({ action: 'poll' }).catch(e => setError(e.message))}>Retry status</Button><Button variant="ghost" size="sm" onClick={() => request({ action: 'stop_tracking', requestId: job.requestId }).catch(e => setError(e.message))}>Stop tracking</Button></>}
+  </div>;
+  const recentLinks = state?.links.filter(job => job.status === 'completed' && !job.needsRetry).slice(0, 3) || [];
   return <>
     <div className="research-control">
       {paused ? <Button variant="outline" disabled={busy} onClick={() => state?.configured ? changePaused('resume') : onOpenKeySettings()}><Play size={17}/>{busy ? 'Resuming…' : 'Resume search'}</Button> : <Button variant="outline" onClick={() => setOpen(true)}><Radar size={17}/>{running ? 'Search in progress' : 'Search now'}</Button>}
@@ -98,22 +107,17 @@ export function ResearchControl({ considering, total, schools = [], revision, on
       <Button variant="ghost" onClick={onOpenKeySettings}><KeyRound size={16}/> API key</Button>
       {state && !state.configured && <span className="search-meta">API setup needed</span>}
     </div>
-    {state?.links.filter((job, index) => job.status !== 'completed' || index < 3).map(job => <div key={job.id} className={'search-progress' + (job.status === 'failed' ? ' has-error' : '')} role="status">
-      {['starting', 'running'].includes(job.status) ? <RefreshCw size={17} className="search-spinner"/> : job.status === 'completed' && !job.needsRetry ? <Check size={17}/> : <AlertCircle size={17}/>}
-      <span><a href={job.sourceUrl} target="_blank" rel="noreferrer">{sourceHost(job.sourceUrl)}</a>: {job.error || (job.status === 'completed' ? `${job.needsRetry ? 'Analysis finished with gaps.' : 'Analysis complete.'} ${job.added || 0} new, ${job.updated || 0} updated openings.${job.gaps ? ' Review coverage issues in Research history.' : ' Saved entries updated.'}` : 'AI is reading the page and its application links…')}</span>
-      {(job.status === 'failed' || job.status === 'completed') && <Button variant="ghost" size="sm" disabled={busy || !state.configured} onClick={() => analyze(job.requestId)}>{job.status === 'completed' && !job.needsRetry ? 'Re-analyze' : 'Retry analysis'}</Button>}
-      {job.status === 'blocked' && <><Button variant="ghost" size="sm" disabled={!state.configured} onClick={() => request({ action: 'poll' }).catch(e => setError(e.message))}>Retry status</Button><Button variant="ghost" size="sm" onClick={() => request({ action: 'stop_tracking', requestId: job.requestId }).catch(e => setError(e.message))}>Stop tracking</Button></>}
-    </div>)}
-    {(running || error || job) && <div className={'search-progress' + (error || (!paused && coverageGaps) ? ' has-error' : '')} role="status">
+    {(running || error || job) && <div className={'search-progress search-overview' + (error || job?.status === 'blocked' || job?.status === 'failed' ? ' has-error' : !paused && coverageGaps ? ' has-gaps' : '')} role="status">
       {paused ? <Pause size={17}/> : running ? <RefreshCw size={17} className="search-spinner"/> : job?.status === 'completed' && !coverageGaps ? <Check size={17}/> : <AlertCircle size={17}/>}
-      <span>{error || (paused ? `Search paused. ${processedSchools}/${totalSchools} schools processed; ${waitingSchools} waiting. Progress is saved.` : job?.error || (running ? `Searching school by school. ${processedSchools}/${totalSchools} schools processed. ${coverageLabel}` : job?.status === 'completed' ? `${coverageGaps ? 'Search finished with gaps.' : 'Search complete.'} ${coverageLabel} ${job.added || 0} new, ${job.updated || 0} updated openings in your review inbox.` : job?.summary))}{paused && <small>Already submitted analyses may finish at OpenAI. Click Resume search to collect their results and continue with the remaining schools. Reopening this website keeps the queue paused; any coverage gaps remain in School results.</small>}{running && <small>{state?.configured ? 'Keep this website open to advance the search, with up to two schools running at once. Use Pause search to save your place for later.' : 'Add your API key to resume checking and import the results.'}</small>}</span>
+      <span>{error || (paused ? `Search paused. ${processedSchools}/${totalSchools} schools processed; ${waitingSchools} waiting. Progress is saved.` : job?.error || (running ? `Searching school by school. ${processedSchools}/${totalSchools} schools processed.` : job?.status === 'completed' ? `${coverageGaps ? 'Search finished with gaps.' : 'Search complete.'} ${job.schools ? `${processedSchools}/${totalSchools} schools processed. ` : ''}${coverageLabel}` : job?.summary))}{job?.status === 'completed' && <small>Results are saved. {inboxCount} openings currently in your review inbox. {coverageGaps && 'See School results for incomplete checks.'}</small>}{paused && <small>Already submitted analyses may finish at OpenAI. Click Resume search to collect their results and continue with the remaining schools. Reopening this website keeps the queue paused; any coverage gaps remain in School results.</small>}{running && <small>{state?.configured ? 'Keep this website open to advance the search, with up to two schools running at once. Use Pause search to save your place for later.' : 'Add your API key to resume checking and import the results.'}</small>}</span>
       {(error || state?.job?.status === 'blocked') && <Button size="sm" variant="ghost" disabled={!state?.configured} onClick={() => request({ action: 'poll' }).catch(e => setError(e.message))}>Retry status</Button>}
       {state?.job?.status === 'blocked' && !job?.schools && <Button variant="ghost" size="sm" onClick={() => request({ action: 'stop_tracking' }).catch(e => setError(e.message))}>Stop tracking</Button>}
       {!running && !paused && coverageGaps && !!job?.schools?.length && <Button variant="outline" size="sm" disabled={busy || !state?.configured} onClick={() => retrySchools()}>Retry incomplete schools</Button>}
     </div>}
     {!!job?.schools?.length && <details className="rounded-md border p-3 text-sm" style={{ flexBasis: '100%', minWidth: 0 }}>
-      <summary className="cursor-pointer font-medium">School results · sources verified for {verifiedSchools}/{totalSchools}</summary>
+      <summary className="cursor-pointer font-medium">School results · {processedSchools}/{totalSchools} processed · {partialSchools} with gaps{failedSchools > 0 && ` · ${failedSchools} failed`}</summary>
       <div className="mt-3 grid max-h-[28rem] gap-3 overflow-y-auto">
+        <p className="muted">{verifiedSchools}/{totalSchools} schools have complete coverage of all required sources. A coverage gap does not invalidate every opening found at that school. Across all attempts: {job.added || 0} new records and {job.updated || 0} updates; entries you tracked or archived are included in those totals.</p>
         {job.schools.map(school => <details key={school.schoolId} className="rounded-md border p-3">
           <summary className="cursor-pointer" style={{ overflowWrap: 'anywhere' }}><strong>{school.name}</strong> · {paused && school.status === 'running' ? 'Submitted · collect results on resume' : schoolStatus[school.status]}</summary>
           <div className="mt-2 grid gap-2">
@@ -131,6 +135,8 @@ export function ResearchControl({ considering, total, schools = [], revision, on
         </details>)}
       </div>
     </details>}
+    {state?.links.filter(job => job.status !== 'completed' || job.needsRetry).map(linkStatus)}
+    {recentLinks.length > 0 && <details className="link-analysis-history"><summary>Recent link analyses ({recentLinks.length})</summary>{recentLinks.map(linkStatus)}</details>}
     <Dialog open={open} onOpenChange={value => !busy && setOpen(value)}><DialogContent>
       <DialogTitle>{paused ? 'Search paused' : running ? 'Search in progress' : 'Search for faculty openings'}</DialogTitle>
       <DialogDescription>{RESEARCH_AREA_LABEL}. Check each school's official hiring pages and linked postings. New findings go to your review inbox; your notes and application progress are preserved.</DialogDescription>

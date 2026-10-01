@@ -23,7 +23,7 @@ function departmentKey(value: string) {
 
 function applicationForm(value: string) {
   try {
-    return /\/(?:login|sign[-_]?in|pre_apply|apply|applications?\/(?:new|start)|users\/(?:new|sign_in))(?:\/|$)/i.test(new URL(value).pathname);
+    return /\/(?:login|sign[-_]?in|pre_apply|apply|(?:applications?|applies)\/(?:new|start)|users\/(?:new|sign_in))(?:\/|$)/i.test(new URL(value).pathname);
   } catch { return false; } // Invalid saved destinations are reported by enqueue.
 }
 
@@ -66,9 +66,15 @@ function candidates(document: SourceDocument) {
     // Numeric portal destinations and explicit faculty advertisements are useful
     // even if the link label is only "View Details" or the page title is generic.
     if (postingPage(url)) { results.push({ url, priority: researchAreaTerms.test(description) ? 0.5 : 1 }); continue; }
-    const hiringPath = /(?:facult[y]|careers?|employment|job[-_]?opportunit|academic[-_]?positions|faculty[-_]?search|recruit(?:ment|ing)|open[-_]?positions)/i.test(target.pathname);
+    // A department slug such as /cds-faculty/ is not hiring intent. Matching
+    // arbitrary substrings led the crawler through profiles, news and giving.
+    const hiringPath = /\/(?:careers?|employment|hiring|faculty[-_](?:hiring|search|positions?|recruitment|careers)|(?:job|employment)[-_]opportunities|academic[-_]positions|recruit(?:ment|ing)?|open[-_]positions)(?:[/.]|$)/i.test(target.pathname);
     const positionTitle = /\b(?:(?:assistant|associate|full|visiting|research|teaching) professor|professorship|tenure[-\s–]?track|open[-\s]?rank|lecturer)\b/i.test(description);
     const instructions = /\b(?:(?:application|applicant) (?:instructions|requirements|materials|process|information)|how to apply)\b/i.test(description);
+    const hiringLabel = /\b(?:hiring|recruit(?:ment|ing)|(?:faculty|academic) (?:positions?|openings?|search|careers?)|applications? (?:open|invited)|apply (?:now|for)|vacanc(?:y|ies))\b/i.test(description);
+    const navigationPath = /\/(?:people|profiles?|directory|faculty-staff-directory|giving|donate|alumni|advisory-board|our-history|about|orientation|faculty-development)(?:[/.]|$)/i.test(target.pathname) || /\/(?:faculty|staff)\/?$/i.test(target.pathname);
+    const newsPath = /\/(?:news|events?|stories|awards?)(?:[/.]|$)/i.test(target.pathname);
+    if ((navigationPath || newsPath) && !hiringPath && !hiringLabel && !instructions) continue;
     if (positionTitle || (facultyContext && instructions) ||
       (faculty.test(description) && (hiringPath || /\b(?:position|opening|search|hiring|career|apply|opportunit|vacanc)/i.test(description))) ||
       (facultyContext && (hiringPath || useful.some(label => generic.test(label))))) {

@@ -22,14 +22,17 @@ async function snapshot(sweep: Sweep) {
   const blocked = tasks.some(({ job }) => job?.status === 'blocked' || job?.uncertainStart || job?.dispatchBlocked);
   const pending = schools.some(s => ['pending', 'running'].includes(s.status));
   const completedSchools = schools.filter(s => s.status === 'completed').length;
+  const processedSchools = schools.filter(s => ['completed', 'partial', 'failed'].includes(s.status)).length;
+  const partialSchools = schools.filter(s => s.status === 'partial').length;
+  const failedSchools = schools.filter(s => s.status === 'failed').length;
   const needsRetry = schools.some(s => ['partial', 'failed', 'blocked'].includes(s.status));
   const status = sweep.pausedAt ? 'paused' : blocked ? 'blocked' : pending ? 'running' : 'completed';
   return { tasks, job: { id: sweep.id, scope: sweep.scope, status, startedAt: sweep.startedAt, schoolCount: schools.length,
     pausedAt: sweep.pausedAt,
-    totalSchools: schools.length, completedSchools, schools, requestIds: [], added, updated, needsRetry,
+    totalSchools: schools.length, completedSchools, processedSchools, partialSchools, failedSchools, schools, requestIds: [], added, updated, needsRetry,
     gaps: schools.reduce((n, s) => n + s.issues.length, 0),
     error: blocked ? 'Search paused because a result needs attention. Restore the original key to resume a blocked result. For a failed school, resolve its API issue and explicitly retry; check API usage first if its start was uncertain.' : undefined,
-    summary: `${completedSchools}/${schools.length} schools verified against fetched hiring sources. ${added} new, ${updated} updated openings.` } };
+    summary: `${processedSchools}/${schools.length} schools processed; ${partialSchools} with coverage gaps; ${failedSchools} failed. Complete source coverage: ${completedSchools}/${schools.length}. Across all attempts: ${added} new records, ${updated} updates.` } };
 }
 
 export async function sweepStatus(apiKey?: string) {

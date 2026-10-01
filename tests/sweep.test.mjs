@@ -77,6 +77,9 @@ test('partial and failed schools retry only explicitly and once; completed schoo
   let state = await h.sweep.pollSweep(browserKey);
   assert.deepEqual(state.job.schools.map(s => s.status), ['completed', 'partial', 'failed']);
   assert.equal(state.job.completedSchools, 1); assert.equal(state.job.added, 1); assert.equal(state.job.needsRetry, true);
+  assert.equal(state.job.processedSchools, 3); assert.equal(state.job.partialSchools, 1); assert.equal(state.job.failedSchools, 1);
+  assert.match(state.job.summary, /3\/3 schools processed; 1 with coverage gaps; 1 failed/);
+  assert.match(state.job.summary, /Across all attempts/);
   for (let i = 0; i < 3; i++) await h.sweep.pollSweep(browserKey);
   assert.equal(posts(h).length, 3, 'ordinary polling cannot spend on failed/partial retries');
   await Promise.all([h.sweep.retrySchools(undefined, browserKey), h.sweep.retrySchools(undefined, browserKey)]);

@@ -111,18 +111,21 @@ button,a,input,select,textarea { touch-action:manipulation; } button:not(:disabl
 
 
 /* On-demand research stays beside the working surface, with no scheduled activity. */
-.on-demand-search{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin:1rem 0}
-.research-control{display:flex;align-items:center;gap:.65rem;flex-shrink:0}
+.on-demand-search{display:grid;grid-template-columns:minmax(0,1fr);gap:.75rem;margin:1rem 0}
+.research-control{display:flex;align-items:center;gap:.65rem;flex-wrap:wrap;min-width:0}
 .search-meta{font-size:.875rem;color:var(--muted-foreground)}
-.search-progress{display:flex;align-items:center;gap:.6rem;font-size:.875rem;flex:1;min-width:240px;color:var(--muted-foreground)}
-.search-progress>svg{flex-shrink:0}.search-progress small{display:block;margin-top:.25rem}
+.search-progress{display:flex;align-items:center;flex-wrap:wrap;gap:.6rem;font-size:.875rem;min-width:0;width:100%;color:var(--muted-foreground)}
+.search-progress>svg{flex-shrink:0}.search-progress>span{flex:1 1 22rem;min-width:0;overflow-wrap:anywhere;line-height:1.55}.search-progress>button{flex-shrink:0;max-width:100%;height:auto;min-height:2rem;white-space:normal;text-align:left}.search-progress small{display:block;margin-top:.25rem;font-size:.875rem;color:var(--muted-foreground)}
 .search-progress.has-error{color:#b42318}
+.search-progress.has-gaps{color:#80561a}
+.search-overview{padding:.85rem 1rem;border:1px solid #dce3ef;border-radius:.5rem;background:#fff}
+.link-analysis-history{min-width:0;color:var(--muted-foreground);font-size:.875rem}.link-analysis-history>summary{cursor:pointer;padding:.3rem 0}.link-analysis-history .search-progress{padding:.75rem 0;border-bottom:1px solid #e2e8f0}.link-analysis-history .search-progress:last-child{border:0}
 .search-setup{display:grid;gap:.85rem;font-size:.95rem;line-height:1.5}
 .search-setup h3{font-size:1rem;font-weight:600}.search-setup a{color:#1d4ed8;text-decoration:underline}
 .search-setup code{font-size:.875rem;overflow-wrap:anywhere}.search-spinner{animation:research-spin 1.5s linear infinite}
 @keyframes research-spin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.search-spinner{animation:none}}
-@media(max-width:600px){.research-control{width:100%;justify-content:space-between}.search-progress{min-width:0;flex-basis:100%}}
+@media(max-width:600px){.research-control{width:100%}.search-progress{align-items:flex-start}.search-progress>span{flex-basis:calc(100% - 2rem)}.search-progress>button{margin-left:1.65rem}.search-overview{padding:.75rem}}
 
 .inline-key-icon{display:inline-block;vertical-align:middle;margin-right:6px}
 
