@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { requestApiKey } from '@/lib/request-api-key';
 import { authorized } from '@/lib/desk-auth';
 import { startResearch, stopTrackingResearch } from '@/lib/research';
-import { pollSweep, retrySchools, startSweep, stopSchoolTracking, sweepStatus } from '@/lib/research-sweep';
+import { pauseSweep, pollSweep, resumeSweep, retrySchools, startSweep, stopSchoolTracking, sweepStatus } from '@/lib/research-sweep';
 
 export async function GET(request: Request) {
   const denied = await authorized(request); if (denied) return denied;
@@ -21,13 +21,15 @@ export async function POST(request: Request) {
       z.object({ action: z.literal('stop_school_tracking'), schoolId: z.string().max(100) }).strict(),
       z.object({ action: z.literal('retry_incomplete') }).strict(),
       z.object({ action: z.literal('poll') }).strict(),
+      z.object({ action: z.literal('pause') }).strict(),
+      z.object({ action: z.literal('resume') }).strict(),
       z.object({ action: z.literal('stop_tracking'), requestId: z.string().regex(/^[a-f0-9]{24}$/).optional() }).strict(),
       z.object({ action: z.literal('analyze'), requestId: z.string().regex(/^[a-f0-9]{24}$/) }).strict(),
     ]).parse(JSON.parse(body));
     if (input.action === 'stop_school_tracking') await stopSchoolTracking(input.schoolId, apiKey);
     if (input.action === 'analyze') await startResearch('link', input.requestId, true, apiKey);
     if (input.action === 'stop_tracking') await stopTrackingResearch(input.requestId, apiKey);
-    const result = input.action === 'start' ? await startSweep(input.scope, input.schoolIds, apiKey) : input.action === 'retry_school' ? await retrySchools(input.schoolId, apiKey) : input.action === 'retry_incomplete' ? await retrySchools(undefined, apiKey) : input.action === 'poll' ? await pollSweep(apiKey) : await sweepStatus(apiKey);
+    const result = input.action === 'pause' ? await pauseSweep(apiKey) : input.action === 'resume' ? await resumeSweep(apiKey) : input.action === 'start' ? await startSweep(input.scope, input.schoolIds, apiKey) : input.action === 'retry_school' ? await retrySchools(input.schoolId, apiKey) : input.action === 'retry_incomplete' ? await retrySchools(undefined, apiKey) : input.action === 'poll' ? await pollSweep(apiKey) : await sweepStatus(apiKey);
     return Response.json(result, { headers: { 'Cache-Control': 'no-store' } });
   } catch (e) {
     return Response.json({ error: e instanceof z.ZodError ? 'Invalid search request.' : (e as Error).message || 'Search failed. Please retry.' }, { status: 400 });

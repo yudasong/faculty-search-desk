@@ -2,7 +2,7 @@ import { database, getRecord, readDesk, saveRecord } from './store';
 import { getJob, pollAllResearch, pollResearch, reconcileSchoolAliases, researchConfigured, researchStatus, startSchoolResearch, stopTrackingResearch, type Job } from './research';
 
 type Task = { schoolId: string; name: string; attempt: number };
-type Sweep = { id: string; scope: 'considering' | 'all'; startedAt: string; tasks: Task[]; revision?: number };
+type Sweep = { id: string; scope: 'considering' | 'all'; startedAt: string; tasks: Task[]; pausedAt?: string; revision?: number };
 const sweepRecord = 'research-sweep';
 const taskKey = (sweep: Sweep, task: Task, attempt = task.attempt) => `research-school-${sweep.id}-${task.schoolId}-${attempt}`;
 const readSweep = (): Promise<Sweep | null> => getRecord('meta', sweepRecord);
@@ -23,8 +23,9 @@ async function snapshot(sweep: Sweep) {
   const pending = schools.some(s => ['pending', 'running'].includes(s.status));
   const completedSchools = schools.filter(s => s.status === 'completed').length;
   const needsRetry = schools.some(s => ['partial', 'failed', 'blocked'].includes(s.status));
-  const status = blocked ? 'blocked' : pending ? 'running' : 'completed';
+  const status = sweep.pausedAt ? 'paused' : blocked ? 'blocked' : pending ? 'running' : 'completed';
   return { tasks, job: { id: sweep.id, scope: sweep.scope, status, startedAt: sweep.startedAt, schoolCount: schools.length,
+    pausedAt: sweep.pausedAt,
     totalSchools: schools.length, completedSchools, schools, requestIds: [], added, updated, needsRetry,
     gaps: schools.reduce((n, s) => n + s.issues.length, 0),
     error: blocked ? 'Search paused because a result needs attention. Restore the original key to resume a blocked result. For a failed school, resolve its API issue and explicitly retry; check API usage first if its start was uncertain.' : undefined,
@@ -35,6 +36,26 @@ export async function sweepStatus(apiKey?: string) {
   const [sweep, legacy] = await Promise.all([readSweep(), researchStatus(apiKey)]);
   if (!sweep) return { ...legacy, job: legacy.job && { ...legacy.job, legacyCoverage: true, needsRetry: true } };
   return { ...legacy, job: (await snapshot(sweep)).job };
+}
+
+export async function pauseSweep(apiKey?: string) {
+  const sweep = await readSweep();
+  if (!sweep) throw new Error('There is no school search to pause.');
+  const now = new Date().toISOString();
+  // Pause must work even while a slow provider request holds the dispatch lease.
+  // Change only the pause field so concurrent task/retry state is preserved.
+  await database().prepare("UPDATE records SET data=json_set(data,'$.pausedAt',?),revision=revision+1,updated_at=? WHERE id=? AND json_extract(data,'$.id')=? AND json_extract(data,'$.pausedAt') IS NULL")
+    .bind(now, now, 'meta:' + sweepRecord, sweep.id).run();
+  return sweepStatus(apiKey);
+}
+
+export async function resumeSweep(apiKey?: string) {
+  if (!researchConfigured(apiKey)) throw new Error('Add your API key before resuming.');
+  const sweep = await readSweep();
+  if (!sweep) throw new Error('There is no school search to resume.');
+  await database().prepare("UPDATE records SET data=json_remove(data,'$.pausedAt'),revision=revision+1,updated_at=? WHERE id=? AND json_extract(data,'$.id')=? AND json_extract(data,'$.pausedAt') IS NOT NULL")
+    .bind(new Date().toISOString(), 'meta:' + sweepRecord, sweep.id).run();
+  return pollSweep(apiKey);
 }
 
 export async function startSweep(scope: 'considering' | 'all', schoolIds: string[] | undefined, apiKey?: string) {
@@ -73,6 +94,7 @@ export async function pollSweep(apiKey?: string) {
   const sweep = await readSweep();
   // Individual links keep their independent analysis and recovery controls.
   if (!sweep) return { ...await pollAllResearch(apiKey), job: (await sweepStatus(apiKey)).job };
+  if (sweep.pausedAt) return { ...await pollAllResearch(apiKey), job: (await sweepStatus(apiKey)).job };
   await Promise.all(sweep.tasks.map(task => reconcileSchoolAliases(taskKey(sweep, task))));
   if (!researchConfigured(apiKey)) return sweepStatus(apiKey);
   const lease = await acquire(sweep);
@@ -80,7 +102,7 @@ export async function pollSweep(apiKey?: string) {
   const errors: string[] = [];
   try {
     const current = await readSweep();
-    if (current?.id !== sweep.id) return sweepStatus(apiKey);
+    if (current?.id !== sweep.id || current.pausedAt) return sweepStatus(apiKey);
     let state = await snapshot(current);
     const polling = await Promise.allSettled([
       pollAllResearch(apiKey),
@@ -90,7 +112,11 @@ export async function pollSweep(apiKey?: string) {
       if (result.status === 'rejected') errors.push((result.reason as Error).message);
       else if ('errors' in result.value) errors.push(...(result.value.errors as string[] || []));
     }
-    state = await snapshot(current);
+    // An explicit pause can arrive while the provider is responding. Finish
+    // saving that result, but do not advance to another school.
+    const afterPolling = await readSweep();
+    if (afterPolling?.id !== current.id || afterPolling.pausedAt) return sweepStatus(apiKey);
+    state = await snapshot(afterPolling);
     // A transient provider failure or inaccessible/uncertain result must not launch more spending.
     if (!errors.length && state.job.status !== 'blocked') {
       const capacity = Math.max(0, 2 - state.tasks.filter(({ job }) => inProgress(job)).length);
@@ -117,6 +143,7 @@ export async function retrySchools(schoolId: string | undefined, apiKey?: string
   if (!researchConfigured(apiKey)) throw new Error('Add your API key before retrying.');
   const sweep = await readSweep();
   if (!sweep) throw new Error('Start a new school-by-school search to replace the earlier unverified search.');
+  if (sweep.pausedAt) return sweepStatus(apiKey);
   if (schoolId && !sweep.tasks.some(t => t.schoolId === schoolId)) throw new Error('That school is not in this search.');
   const lease = await acquire(sweep);
   if (!lease) return sweepStatus(apiKey);

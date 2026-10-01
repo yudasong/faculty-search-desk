@@ -1,6 +1,6 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Radar, RefreshCw, AlertCircle, Check, KeyRound } from 'lucide-react';
+import { Radar, RefreshCw, AlertCircle, Check, KeyRound, Pause, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
@@ -19,19 +19,24 @@ export function ResearchControl({ considering, total, schools = [], revision, on
   const [busy, setBusy] = useState(false), [error, setError] = useState('');
   const completed = useRef(new Set<string>());
   const credentialVersion = useRef(0);
+  const controlVersion = useRef(0);
   const running = state?.job?.status === 'starting' || state?.job?.status === 'running';
+  const paused = state?.job?.status === 'paused';
   const linkRunning = state?.links.some(j => ['starting', 'running'].includes(j.status));
   const job = state?.job;
   const legacyCoverage = !!job?.legacyCoverage;
   const verifiedSchools = job?.completedSchools ?? job?.schools?.filter(school => school.status === 'completed').length ?? 0;
   const totalSchools = job?.totalSchools ?? job?.schools?.length ?? job?.schoolCount ?? 0;
+  const processedSchools = job?.schools?.filter(school => ['completed', 'partial', 'failed'].includes(school.status)).length ?? 0;
+  const waitingSchools = job?.schools?.filter(school => school.status === 'pending').length ?? 0;
   const coverageGaps = !!job && (legacyCoverage || job.needsRetry || ['failed', 'blocked'].includes(job.status) || job.schools?.some(school => ['partial', 'failed', 'blocked'].includes(school.status)) || (job.status === 'completed' && verifiedSchools < totalSchools));
   const coverageLabel = legacyCoverage ? 'Previous search coverage is unverified.' : `Verified sources for ${verifiedSchools}/${totalSchools} schools.`;
   const request = useCallback(async (body?: unknown) => {
     const version = credentialVersion.current;
+    const control = controlVersion.current;
     const response = await researchFetch('/api/research', body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {});
     const result = await response.json() as State & { error?: string }; if (!response.ok) throw new Error(result.error || 'Search is temporarily unavailable.');
-    if (version !== credentialVersion.current) return result;
+    if (version !== credentialVersion.current || control !== controlVersion.current) return result;
     setState(result); setError(result.errors?.join(' ') || ''); onConfigured(result.configured);
     const finished = [result.job, ...result.links].filter((j): j is Job => !!j && j.status === 'completed').map(j => j.id);
     for (const school of result.job?.schools || []) {
@@ -69,6 +74,12 @@ export function ResearchControl({ considering, total, schools = [], revision, on
     catch (e) { setError((e as Error).message); }
     finally { setBusy(false); }
   }
+  async function changePaused(action: 'pause' | 'resume') {
+    controlVersion.current++; setBusy(true); setError('');
+    try { await request({ action }); setOpen(false); }
+    catch (e) { setError((e as Error).message); }
+    finally { setBusy(false); }
+  }
   async function analyze(requestId?: string) {
     setBusy(true); setError('');
     try { await request({ action: 'analyze', requestId }); }
@@ -82,7 +93,8 @@ export function ResearchControl({ considering, total, schools = [], revision, on
   }
   return <>
     <div className="research-control">
-      <Button variant="outline" onClick={() => setOpen(true)}><Radar size={17}/>{running ? 'Search in progress' : 'Search now'}</Button>
+      {paused ? <Button variant="outline" disabled={busy} onClick={() => state?.configured ? changePaused('resume') : onOpenKeySettings()}><Play size={17}/>{busy ? 'Resuming…' : 'Resume search'}</Button> : <Button variant="outline" onClick={() => setOpen(true)}><Radar size={17}/>{running ? 'Search in progress' : 'Search now'}</Button>}
+      {running && !!job?.schools?.length && <Button variant="outline" disabled={busy} onClick={() => changePaused('pause')}><Pause size={17}/> Pause search</Button>}
       <Button variant="ghost" onClick={onOpenKeySettings}><KeyRound size={16}/> API key</Button>
       {state && !state.configured && <span className="search-meta">API setup needed</span>}
     </div>
@@ -92,18 +104,18 @@ export function ResearchControl({ considering, total, schools = [], revision, on
       {(job.status === 'failed' || job.status === 'completed') && <Button variant="ghost" size="sm" disabled={busy || !state.configured} onClick={() => analyze(job.requestId)}>{job.status === 'completed' && !job.needsRetry ? 'Re-analyze' : 'Retry analysis'}</Button>}
       {job.status === 'blocked' && <><Button variant="ghost" size="sm" disabled={!state.configured} onClick={() => request({ action: 'poll' }).catch(e => setError(e.message))}>Retry status</Button><Button variant="ghost" size="sm" onClick={() => request({ action: 'stop_tracking', requestId: job.requestId }).catch(e => setError(e.message))}>Stop tracking</Button></>}
     </div>)}
-    {(running || error || job) && <div className={'search-progress' + (error || coverageGaps ? ' has-error' : '')} role="status">
-      {running ? <RefreshCw size={17} className="search-spinner"/> : job?.status === 'completed' && !coverageGaps ? <Check size={17}/> : <AlertCircle size={17}/>}
-      <span>{error || job?.error || (running ? `Searching school by school. ${coverageLabel}` : job?.status === 'completed' ? `${coverageGaps ? 'Search finished with gaps.' : 'Search complete.'} ${coverageLabel} ${job.added || 0} new, ${job.updated || 0} updated openings in your review inbox.` : job?.summary)}{running && <small>{state?.configured ? 'Keep this website open to advance the search, with up to two schools running at once. Saved progress is retained if you leave.' : 'Add your API key to resume checking and import the results.'}</small>}</span>
+    {(running || error || job) && <div className={'search-progress' + (error || (!paused && coverageGaps) ? ' has-error' : '')} role="status">
+      {paused ? <Pause size={17}/> : running ? <RefreshCw size={17} className="search-spinner"/> : job?.status === 'completed' && !coverageGaps ? <Check size={17}/> : <AlertCircle size={17}/>}
+      <span>{error || (paused ? `Search paused. ${processedSchools}/${totalSchools} schools processed; ${waitingSchools} waiting. Progress is saved.` : job?.error || (running ? `Searching school by school. ${processedSchools}/${totalSchools} schools processed. ${coverageLabel}` : job?.status === 'completed' ? `${coverageGaps ? 'Search finished with gaps.' : 'Search complete.'} ${coverageLabel} ${job.added || 0} new, ${job.updated || 0} updated openings in your review inbox.` : job?.summary))}{paused && <small>Already submitted analyses may finish at OpenAI. Click Resume search to collect their results and continue with the remaining schools. Reopening this website keeps the queue paused; any coverage gaps remain in School results.</small>}{running && <small>{state?.configured ? 'Keep this website open to advance the search, with up to two schools running at once. Use Pause search to save your place for later.' : 'Add your API key to resume checking and import the results.'}</small>}</span>
       {(error || state?.job?.status === 'blocked') && <Button size="sm" variant="ghost" disabled={!state?.configured} onClick={() => request({ action: 'poll' }).catch(e => setError(e.message))}>Retry status</Button>}
       {state?.job?.status === 'blocked' && !job?.schools && <Button variant="ghost" size="sm" onClick={() => request({ action: 'stop_tracking' }).catch(e => setError(e.message))}>Stop tracking</Button>}
-      {!running && coverageGaps && !!job?.schools?.length && <Button variant="outline" size="sm" disabled={busy || !state?.configured} onClick={() => retrySchools()}>Retry incomplete schools</Button>}
+      {!running && !paused && coverageGaps && !!job?.schools?.length && <Button variant="outline" size="sm" disabled={busy || !state?.configured} onClick={() => retrySchools()}>Retry incomplete schools</Button>}
     </div>}
     {!!job?.schools?.length && <details className="rounded-md border p-3 text-sm" style={{ flexBasis: '100%', minWidth: 0 }}>
       <summary className="cursor-pointer font-medium">School results · sources verified for {verifiedSchools}/{totalSchools}</summary>
       <div className="mt-3 grid max-h-[28rem] gap-3 overflow-y-auto">
         {job.schools.map(school => <details key={school.schoolId} className="rounded-md border p-3">
-          <summary className="cursor-pointer" style={{ overflowWrap: 'anywhere' }}><strong>{school.name}</strong> · {schoolStatus[school.status]}</summary>
+          <summary className="cursor-pointer" style={{ overflowWrap: 'anywhere' }}><strong>{school.name}</strong> · {paused && school.status === 'running' ? 'Submitted · collect results on resume' : schoolStatus[school.status]}</summary>
           <div className="mt-2 grid gap-2">
             {school.summary && <p>{school.summary}</p>}
             {school.issues?.map((issue, index) => <p key={index} className="error-text">{issue}</p>)}
@@ -113,16 +125,16 @@ export function ResearchControl({ considering, total, schools = [], revision, on
                 <span className="block text-xs">{!source.readable ? 'Not read' : !source.complete ? 'Partially read' : 'Read in full'}{source.error ? ` · ${source.error}` : ''}</span>
               </li>)}
             </ul> : <p className="muted">{school.status === 'pending' ? 'Waiting to check official hiring pages.' : school.status === 'running' ? 'Checking official hiring pages and linked postings.' : 'No source reading was recorded.'}</p>}
-            {['completed', 'partial', 'failed'].includes(school.status) && <div><Button variant="outline" size="sm" disabled={busy || running || !state?.configured} onClick={() => retrySchools(school.schoolId)}>{school.status === 'completed' ? 'Search this school again' : 'Retry this school'}</Button></div>}
+            {['completed', 'partial', 'failed'].includes(school.status) && <div><Button variant="outline" size="sm" disabled={busy || running || paused || !state?.configured} onClick={() => retrySchools(school.schoolId)}>{school.status === 'completed' ? 'Search this school again' : 'Retry this school'}</Button></div>}
             {school.status === 'blocked' && <div><p className="muted">Restore the original key and retry status. If this result has expired, stop tracking it to allow a new attempt; this does not cancel work at OpenAI.</p><Button variant="outline" size="sm" disabled={busy} onClick={() => request({ action: 'stop_school_tracking', schoolId: school.schoolId }).catch(e => setError(e.message))}>Stop tracking this result</Button></div>}
           </div>
         </details>)}
       </div>
     </details>}
     <Dialog open={open} onOpenChange={value => !busy && setOpen(value)}><DialogContent>
-      <DialogTitle>{running ? 'Search in progress' : 'Search for faculty openings'}</DialogTitle>
+      <DialogTitle>{paused ? 'Search paused' : running ? 'Search in progress' : 'Search for faculty openings'}</DialogTitle>
       <DialogDescription>{RESEARCH_AREA_LABEL}. Check each school's official hiring pages and linked postings. New findings go to your review inbox; your notes and application progress are preserved.</DialogDescription>
-      {!state ? <><p>{error || 'Checking search setup…'}</p><Button variant="outline" onClick={() => request().catch(e => setError(e.message))}>Check setup</Button></> : !state.configured ? <div className="search-setup"><h3>Add your API key</h3><p>Enter your OpenAI key and save it in this browser to enable AI analysis. No search has started.</p><Button onClick={() => { setOpen(false); onOpenKeySettings(); }}><KeyRound size={16}/> Enter API key</Button></div> : running ? <p>Research is already running. Return to the school list while it checks sources.</p> : <>
+      {!state ? <><p>{error || 'Checking search setup…'}</p><Button variant="outline" onClick={() => request().catch(e => setError(e.message))}>Check setup</Button></> : !state.configured ? <div className="search-setup"><h3>Add your API key</h3><p>Enter your OpenAI key and save it in this browser to enable AI analysis. Your saved search progress is retained.</p><Button onClick={() => { setOpen(false); onOpenKeySettings(); }}><KeyRound size={16}/> Enter API key</Button></div> : paused ? <><p>Your search is paused with {processedSchools}/{totalSchools} schools processed. Resume continues from saved progress.</p><Button disabled={busy} onClick={() => changePaused('resume')}><Play size={16}/> Resume search</Button></> : running ? <p>Research is already running. Return to the school list while it checks sources.</p> : <>
         <label className="field"><span>Schools to search</span><NativeSelect aria-label="Research school scope" value={scope} onChange={e => setScope(e.target.value)}><option value="considering">My shortlist ({considering} schools)</option><option value="all">Full discovery pool ({total} schools)</option>{schools.length > 0 && <option value="selected">Specific school</option>}</NativeSelect></label>
         {scope === 'selected' && <label className="field"><span>School</span><NativeSelect aria-label="School to research" value={selectedSchool} onChange={e => setSelectedSchool(e.target.value)}><option value="">Choose a school</option>{[...schools].sort((a, b) => a.name.localeCompare(b.name)).map(school => <option value={school.id} key={school.id}>{school.name}</option>)}</NativeSelect></label>}
         <p className="muted">Searches run only when you start them and use OpenAI API credits for each school. Larger searches proceed school by school, with up to two running at once. Keep this website open to advance the search; any gaps appear in the school results.</p>
