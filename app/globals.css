@@ -169,3 +169,7 @@ button,a,input,select,textarea { touch-action:manipulation; } button:not(:disabl
 
 /* Review actions remain usable when an archive control adds another button. */
 .card-bottom{flex-wrap:wrap}.card-bottom .actions{flex-wrap:wrap}
+
+.opening-notices { margin: .75rem 0; padding: .65rem .8rem; border-left: 3px solid #ac762b; background: #fff8e8; color: #765017; font-size: .875rem; line-height: 1.5; }
+.opening-notices p { margin: 0; }
+.opening-notices p + p { margin-top: .35rem; }

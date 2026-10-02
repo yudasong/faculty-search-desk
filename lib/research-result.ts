@@ -67,14 +67,16 @@ export function departmentName(value: string, school: School) {
 }
 
 type OpeningIdentity = Pick<Opening, 'schoolId' | 'department' | 'title' | 'sourceUrl'> & { applicationUrl?: string | null };
-function postingIdentity(value?: string | null) {
+export function postingIdentity(value?: string | null) {
   if (!value) return '';
   const url = new URL(normalizedUrl(value));
-  if (!postingPage(value) && !/\/(?:JPF|REQ[_-]?|R)\d+(?:\/|$)/i.test(url.pathname)) return '';
+  if (!postingPage(value) && !(url.hostname === 'facultyrecruiting.northwestern.edu' && /^\/apply\/[A-Za-z0-9_=-]+\/?$/.test(url.pathname)) && !/\/(?:JPF|REQ[_-]?|R)\d+(?:\/|$)/i.test(url.pathname)) return '';
   url.pathname = url.pathname.replace(/\/pre_apply\/?$/, '').replace(/\/$/, '');
   if (individualPosting(value)) url.search = '';
   return url.toString();
 }
+
+const identityDepartment = (name: string) => name.replace(/\s*\([A-Z]{2,8}\)\s*$/, '').toLowerCase().replace(/\s+/g, ' ').trim();
 
 export function matchesOpening(old: OpeningIdentity, found: OpeningIdentity) {
   if (old.schoolId !== found.schoolId) return false;
@@ -87,10 +89,19 @@ export function matchesOpening(old: OpeningIdentity, found: OpeningIdentity) {
   const oldApply = postingIdentity(old.applicationUrl), newApply = postingIdentity(found.applicationUrl);
   if ((oldApply && (oldApply === newSource || oldApply === newApply)) || (newApply && newApply === oldSource)) return true;
   if (oldSource && newSource) return false;
-  if (old.department.toLowerCase() !== found.department.toLowerCase()) return false;
+  if (identityDepartment(old.department) !== identityDepartment(found.department)) return false;
   const sameTitle = old.title.trim().toLowerCase() === found.title.trim().toLowerCase();
   return sameTitle && (normalizedUrl(old.sourceUrl) === normalizedUrl(found.sourceUrl) ||
     (!!old.applicationUrl && !!found.applicationUrl && normalizedUrl(old.applicationUrl) === normalizedUrl(found.applicationUrl)));
+}
+
+// Source/application aliases must generate the same key even when independent
+// analyses read the database before either has committed its new record.
+export function openingIdentityKey(found: OpeningIdentity) {
+  const stable = individualPosting(found.sourceUrl) ? postingIdentity(found.sourceUrl) : postingIdentity(found.applicationUrl) || postingIdentity(found.sourceUrl);
+  if (stable) return found.schoolId + '|' + stable;
+  const department = identityDepartment(found.department);
+  return found.schoolId + '|' + department + '|' + normalizedUrl(found.applicationUrl || found.sourceUrl) + '|' + found.title.trim().toLowerCase();
 }
 
 export function userArchived(opening: Opening) {

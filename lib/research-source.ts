@@ -28,7 +28,7 @@ export const individualPosting = (url: string) => !!(interfolioId(url) || ajoId(
 // Keep this separate from portal-specific metadata validation in individualPosting.
 export function postingPage(value: string) {
   const url = new URL(value);
-  return individualPosting(value) || /\/(?:postings|jobs|job|positions|position|requisitions)\/(?:\d+|[^/]*[-_]\d+)(?:\/|$)/i.test(url.pathname) ||
+  return individualPosting(value) || /\/faculty-positions\/(?:[^/]+-(?:chair|professor|professorship)|(?:assistant|associate|full|teaching|research)-professor-[^/]+)\/?$/i.test(url.pathname) || /\/(?:postings|jobs|job|positions|position|requisitions)\/(?:\d+|[^/]*[-_]\d+)(?:\/|$)/i.test(url.pathname) ||
     [...url.searchParams.keys()].some(k => /^(?:job_?id|posting_?id|requisition_?id|req_?id)$/i.test(k));
 }
 

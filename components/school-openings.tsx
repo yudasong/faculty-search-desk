@@ -1,3 +1,4 @@
+import { OpeningNotices } from './opening-notices';
 import { ArrowUpRight, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { Opening } from '@/lib/types';
@@ -17,7 +18,7 @@ export function SchoolOpenings({ openings, onEdit }: { openings: Opening[]; onEd
           <span className={'status ' + (opening.hiringStatus === 'Open' ? 'green' : opening.hiringStatus === 'Closed' ? 'gray' : 'amber')}>{opening.hiringStatus === 'Unverified' ? 'Needs verification' : opening.hiringStatus}</span>
         </div>
         <h4 id={'school-opening-' + opening.id}>{opening.title}</h4>
-        <p className="school-opening-stage">{opening.workflow === 'Inbox' ? 'In review inbox' : opening.workflow}</p>
+        <OpeningNotices opening={opening}/><p className="school-opening-stage">{opening.workflow === 'Inbox' ? 'In review inbox' : opening.workflow}</p>
         <dl className="school-opening-dates">
           <div><dt>{primaryLabel}</dt><dd>{primaryDate ? <time dateTime={primaryDate}>{formatDate(primaryDate)}</time> : 'Date not verified'}</dd></div>
           {opening.hardDeadline && opening.hardDeadline !== primaryDate && <div><dt>Final closing date</dt><dd><time dateTime={opening.hardDeadline}>{formatDate(opening.hardDeadline)}</time></dd></div>}

@@ -1,4 +1,4 @@
-import { researchAreaTerms } from './research-scope';
+import { discoveryExclusionReason, researchAreaTerms, staleOpeningReason } from './research-scope';
 import { canonical } from './intake';
 import { readResearchSource, postingPage, type SourceDocument } from './research-source';
 import type { Opening, School } from './types';
@@ -61,6 +61,7 @@ function candidates(document: SourceDocument) {
     if (!useful.length || applicationForm(url) || /\/(?:bookmarks?|privacy|accessibility|maps?)(?:\/|$)/i.test(target.pathname)) continue;
     const descriptive = useful.filter(label => !generic.test(label));
     const description = descriptive.join(' ');
+    if (discoveryExclusionReason({ title: description, sourceUrl: url })) continue;
     if (nonFaculty.test(description) && !faculty.test(description)) continue;
     if (pagination(target, page, useful.join(' '))) { results.push({ url, priority: 2 }); continue; }
     // Numeric portal destinations and explicit faculty advertisements are useful
@@ -91,7 +92,7 @@ function candidates(document: SourceDocument) {
 export async function discoverSchoolSources(school: School, knownOpenings: Opening[]): Promise<SchoolDiscovery> {
   const started = Date.now();
   const documents: SourceDocument[] = [], issues: string[] = [];
-  const departments = school.departments.map(department => ({ department, sourceUrls: [] as string[], issues: [] as string[] }));
+  const departments = school.departments.filter(department => !discoveryExclusionReason({ department })).map(department => ({ department, sourceUrls: [] as string[], issues: [] as string[] }));
   const queue: Candidate[] = [], seen = new Map<string, Candidate>();
   const department = (name: string) => {
     let item = departments.find(d => departmentKey(d.department) === departmentKey(name));
@@ -113,7 +114,7 @@ export async function discoverSchoolSources(school: School, knownOpenings: Openi
     const item: Candidate = { url, depth, priority, departments: new Set(scope), read: false };
     seen.set(url, item); queue.push(item);
   };
-  for (const source of school.sources) enqueue(source.url, 0, 0, [department(source.department).department]);
+  for (const source of school.sources) if (!discoveryExclusionReason({ department: source.department, sourceUrl: source.url })) enqueue(source.url, 0, 0, [department(source.department).department]);
   for (const item of [...departments]) {
     if (!school.sources.some(s => departmentKey(s.department) === departmentKey(item.department))) {
       issue(`No saved hiring source for ${item.department}.`, [item.department]);
@@ -121,7 +122,7 @@ export async function discoverSchoolSources(school: School, knownOpenings: Openi
   }
   if (!departments.length) issue('No departments or hiring sources are configured.', []);
   for (const opening of knownOpenings) {
-    if (opening.schoolId !== school.id || /^archived$/i.test(opening.workflow)) continue;
+    if (opening.schoolId !== school.id || /^archived$/i.test(opening.workflow) || discoveryExclusionReason(opening) || staleOpeningReason(opening)) continue;
     // Saved leads do not add required departments to the configured search scope.
     const names = departments.filter(d => departmentKey(d.department) === departmentKey(opening.department)).map(d => d.department);
     // Keep the saved advertisement as evidence even if it now redirects to a

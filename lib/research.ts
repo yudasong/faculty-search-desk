@@ -1,11 +1,11 @@
 import { env } from 'cloudflare:workers';
 import { database, getRecord, readDesk } from './store';
 import { hash } from './intake';
-import { decodeResearch, departmentName, matchesArchivedOpening, matchesOpening, normalizedUrl, officialSource, openingPatch, providerSourceUrls, resultJsonSchema, userArchived } from './research-result';
+import { decodeResearch, departmentName, matchesArchivedOpening, matchesOpening, normalizedUrl, officialSource, openingIdentityKey, openingPatch, providerSourceUrls, resultJsonSchema, userArchived } from './research-result';
 import type { Opening } from './types';
 import { openAIResponse, ProviderError } from './openai-provider';
-import { readResearchSource, sourceReceipt, samePosting, individualPosting, type SourceDocument, type SourceReceipt } from './research-source';
-import { scopeEvidenceIssue } from './research-scope';
+import { readResearchSource, sourceReceipt, samePosting, individualPosting, postingPage, type SourceDocument, type SourceReceipt } from './research-source';
+import { DEFAULT_RESEARCH_SCOPE, discoveryExclusionReason, scopeEvidenceIssue, staleOpeningReason } from './research-scope';
 import { researchInstructions } from './research-prompt';
 import { institutionMatches, schoolFromPosting } from './research-school';
 import { discoverSchoolSources } from './research-discovery';
@@ -64,7 +64,7 @@ export async function startResearch(scope: ResearchScope, requestId?: string, re
   // Saved links can refer to schools outside the selected list.
   for (const r of requests) { const s = desk.schools.find(s => s.id === r.schoolId); if (s && !schools.some(x => x.id === s.id)) schools.push(s); }
   if (!schools.length && !requests.length) throw new Error('Select a school or save a link before searching.');
-  const next: Job = { id: crypto.randomUUID(), status: 'starting', scope, browserKey: !!apiKey, ...(schoolTask ? { recordKey: schoolTask.recordKey, scopePolicyVersion: 1 } : {}), ...(requestId ? { requestId, sourceUrl: requests[0].url } : {}), startedAt: new Date().toISOString(), schoolIds: schools.map(s => s.id), requestIds: requests.map(r => r.id), summary: 'Starting research…' };
+  const next: Job = { id: crypto.randomUUID(), status: 'starting', scope, browserKey: !!apiKey, ...(schoolTask ? { recordKey: schoolTask.recordKey, scopePolicyVersion: 2 } : {}), ...(requestId ? { requestId, sourceUrl: requests[0].url } : {}), startedAt: new Date().toISOString(), schoolIds: schools.map(s => s.id), requestIds: requests.map(r => r.id), summary: 'Starting research…' };
   const db = database();
   const claim = await db.prepare(`INSERT INTO records(id,kind,data,revision,updated_at) VALUES(?,'meta',?,1,?)
     ON CONFLICT(id) DO UPDATE SET data=excluded.data,revision=records.revision+1,updated_at=excluded.updated_at
@@ -95,7 +95,7 @@ export async function startResearch(scope: ResearchScope, requestId?: string, re
       max_output_tokens: 16000, include: ['web_search_call.action.sources'],
       text: { format: { type: 'json_schema', name: 'faculty_research', strict: true, schema: resultJsonSchema } },
       instructions: researchInstructions(scope, new Date().toISOString().slice(0, 10)),
-      input: JSON.stringify({ sourceDocuments, preferences: desk.settings.scope, directoryForQueuedLinks: requests.some(r => !r.schoolId) ? desk.schools.map(s => ({ id: s.id, name: s.name, domain: s.domain, departments: s.departments })) : [], schoolsToSearch: schools.map(s => ({ id: s.id, name: s.name, domain: s.domain, departments: s.departments, sources: s.sources.map(({ department, url }) => ({ department, url })) })), queuedLinks: requests.map(r => ({ id: r.id, url: r.url, schoolId: r.schoolId || null })), knownOpenings: desk.openings.filter(o => (schools.some(s => s.id === o.schoolId) || requests.some(r => [o.sourceUrl, o.applicationUrl].filter(Boolean).some(u => samePosting(r.url, u)))) && o.workflow !== 'Archived').map(o => ({ schoolId: o.schoolId, department: o.department, title: o.title, sourceUrl: o.sourceUrl, applicationUrl: o.applicationUrl })) }),
+      input: JSON.stringify({ sourceDocuments, preferences: DEFAULT_RESEARCH_SCOPE, directoryForQueuedLinks: requests.some(r => !r.schoolId) ? desk.schools.map(s => ({ id: s.id, name: s.name, domain: s.domain, departments: s.departments })) : [], schoolsToSearch: schools.map(s => ({ id: s.id, name: s.name, domain: s.domain, departments: s.departments, sources: s.sources.map(({ department, url }) => ({ department, url })) })), queuedLinks: requests.map(r => ({ id: r.id, url: r.url, schoolId: r.schoolId || null })), knownOpenings: desk.openings.filter(o => (schools.some(s => s.id === o.schoolId) || requests.some(r => [o.sourceUrl, o.applicationUrl].filter(Boolean).some(u => samePosting(r.url, u)))) && o.workflow !== 'Archived').map(o => ({ schoolId: o.schoolId, department: o.department, title: o.title, sourceUrl: o.sourceUrl, applicationUrl: o.applicationUrl })) }),
     }, apiKey);
     if (typeof response.id !== 'string' || !/^resp_[A-Za-z0-9_-]+$/.test(response.id)) throw new Error('The provider did not return a valid search ID. Check API usage before retrying.');
     await updateJob(job, { status: 'running', responseId: response.id, summary: 'Checking official sources…' });
@@ -182,7 +182,7 @@ export async function pollResearch(jobRecordId = 'research', apiKey?: string, re
           model: model(), background: true, store: true, reasoning: { effort: 'medium' }, max_output_tokens: 16000,
           text: { format: { type: 'json_schema', name: 'faculty_research', strict: true, schema: resultJsonSchema } },
           instructions: researchInstructions('school', new Date().toISOString().slice(0, 10)) + '\nThis is the final extraction pass. The website fetched the newly discovered URLs. Use only the supplied documents for factual extraction. For each candidate, import its verified opening or explicitly explain why it is irrelevant/blocked. Do not lose candidate URLs or label unreadable documents as checked. Preserve sourceReviews for every source.',
-          input: JSON.stringify({ sourceDocuments: documents, preferences: desk.settings.scope, schoolsToSearch: [{ id: school.id, name: school.name, domain: school.domain, departments: school.departments }], discoveryResult: result }),
+          input: JSON.stringify({ sourceDocuments: documents, preferences: DEFAULT_RESEARCH_SCOPE, schoolsToSearch: [{ id: school.id, name: school.name, domain: school.domain, departments: school.departments }], discoveryResult: result }),
         }, apiKey);
         if (typeof next.id !== 'string' || !/^resp_[A-Za-z0-9_-]+$/.test(next.id)) throw new Error('The provider did not return a valid search ID. Check API usage before retrying.');
         await updateJob(job, { responseId: next.id, status: 'running', summary: 'Extracting verified posting details…' });
@@ -215,7 +215,14 @@ export async function pollResearch(jobRecordId = 'research', apiKey?: string, re
     statements.push(db.prepare(`INSERT INTO records(id,kind,data,revision,updated_at) SELECT ?,?,?,1,? WHERE ${guard}${archiveGuard}
       ON CONFLICT(id) DO UPDATE SET data=json_patch(records.data,?),revision=records.revision+1,updated_at=excluded.updated_at`).bind(kind + ':' + id, kind, JSON.stringify(data), date, 'meta:' + recordId(job), job.revision, ...ids, JSON.stringify(patch)));
   };
-  let added = 0, updated = 0, archived = 0;
+  let added = 0, updated = 0, archived = 0, excluded = 0;
+  const excludedItems = new Set<typeof result.openings[number]>();
+  const exclusions = new Map<string, { reason: string; stale: boolean }>();
+  const exclude = (item: typeof result.openings[number], reason: string, stale = false) => {
+    excluded++; excludedItems.add(item);
+    const urls = [item.sourceUrl, ...(job!.sources || []).filter(s => [s.url, s.retrievedUrl].includes(item.sourceUrl)).flatMap(s => [s.url, ...(s.method === 'html' && s.retrievedUrl ? [s.retrievedUrl] : [])])];
+    for (const url of urls) exclusions.set(normalizedUrl(url), { reason, stale });
+  };
   const completedIds = new Set<string>();
   const importedRequests = new Map<string, string>();
   const importedUrls: string[] = [];
@@ -226,7 +233,11 @@ export async function pollResearch(jobRecordId = 'research', apiKey?: string, re
     if (job.scope === 'school' && (!source?.readable || !source.complete)) {
       gaps.push(`${item.title}: posting was not imported because its full source could not be read (${item.sourceUrl}).`); continue;
     }
-    if (job.scope === 'school' && job.scopePolicyVersion === 1) {
+    const discovery = job.scope !== 'link' && !queuedSource;
+    const document = job.documents?.find(d => d.url === source?.url);
+    const outside = discovery && discoveryExclusionReason(item, document || source);
+    if (outside && source?.readable && source.complete) { exclude(item, outside); continue; }
+    if (job.scope === 'school' && (job.scopePolicyVersion || 0) >= 1) {
       const document = job.documents?.find(d => d.url === source?.url);
       const issue = scopeEvidenceIssue(item, document);
       if (issue) { gaps.push(`${item.title}: not imported because ${issue}.`); continue; }
@@ -273,6 +284,17 @@ export async function pollResearch(jobRecordId = 'research', apiKey?: string, re
         }
       }
     }
+    // A stale hiring hub can still say 'applications invited' while its exact
+    // linked application is closed. Use a uniquely matched, fully read portal
+    // rather than treating the hub's continued existence as current hiring.
+    const titleKey = (value: string) => value.normalize('NFKC').replace(/[^\p{L}\p{N}]+/gu, ' ').trim().toLowerCase();
+    const linkedPostings = (job.sources || []).filter(s => s.readable && s.complete && individualPosting(s.url) &&
+      titleKey(s.title || '') === titleKey(found.title) &&
+      source?.links?.some(link => /^apply(?:\s|$)/i.test(link.label) && samePosting(link.url, s.url)) &&
+      (!found.applicationUrl || samePosting(found.applicationUrl, s.url)));
+    const freshnessSource = source && individualPosting(source.url) ? source : linkedPostings.length === 1 ? linkedPostings[0] : source;
+    const stale = discovery && staleOpeningReason(found, undefined, freshnessSource);
+    if (stale) { exclude(item, stale, true); continue; }
     const linkedApplication = !!found.applicationUrl && !!source?.readable && source.complete && samePosting(source.url, found.sourceUrl) &&
       (source.links || []).some(l => normalizedUrl(l.url) === normalizedUrl(found.applicationUrl!));
     if (found.applicationUrl && ((!evidence.has(normalizedUrl(found.applicationUrl)) && !linkedApplication) || (!officialSource(found.applicationUrl, school) && source?.applicationUrl !== found.applicationUrl))) {
@@ -288,8 +310,7 @@ export async function pollResearch(jobRecordId = 'research', apiKey?: string, re
       continue;
     }
     const old = desk.openings.find(o => !(o.workflow === 'Archived' && o.verification?.startsWith('Draft')) && matchesOpening(o, found));
-    const identityUrl = individualPosting(found.sourceUrl) ? found.sourceUrl : found.applicationUrl || found.sourceUrl;
-    const id = old?.id || await hash(found.schoolId + '|' + (individualPosting(found.sourceUrl) ? '' : found.department.toLowerCase()) + '|' + normalizedUrl(identityUrl) + (found.applicationUrl || individualPosting(found.sourceUrl) ? '' : '|' + found.title.trim().toLowerCase()));
+    const id = old?.id || await hash(openingIdentityKey(found));
     const patch = openingPatch(found, date.slice(0, 10));
     const record = { id, applicationUrl: '', deadline: '', deadlineType: 'Unknown', deadlineText: '', hardDeadline: '', rank: 'Unknown', areas: '', materials: '', letters: '', hiringStatus: 'Unverified', workflow: 'Inbox', notes: '', ...patch } as Opening;
     if (createdSchool) {
@@ -302,6 +323,15 @@ export async function pollResearch(jobRecordId = 'research', apiKey?: string, re
     if (queuedSource) importedRequests.set(queuedSource.id, school.id);
     if (old) updated++; else added++;
     const i = desk.openings.findIndex(o => o.id === id); if (i >= 0) desk.openings[i] = { ...desk.openings[i], ...patch } as Opening; else desk.openings.push(record);
+  }
+  for (const [url, decision] of exclusions) {
+    // A mixed hub must retain its assessment when it also contains eligible
+    // candidates. Excluding one advertisement cannot hide another unread one.
+    if (result.openings.some(item => !excludedItems.has(item) && normalizedUrl(item.sourceUrl) === url)) continue;
+    const prior = result.sourceReviews.find(r => normalizedUrl(r.url) === url);
+    if (prior?.openingUrls.some(candidate => !exclusions.has(normalizedUrl(candidate)))) continue;
+    result.sourceReviews = result.sourceReviews.filter(r => normalizedUrl(r.url) !== url);
+    result.sourceReviews.push({ url, outcome: decision.stale && !postingPage(url) ? 'no_openings' : 'irrelevant', openingUrls: [], departments: prior?.departments || [], reason: decision.reason });
   }
   for (const id of result.completedRequestIds) {
     const request = desk.requests.find(r => r.id === id && job.requestIds.includes(id));
@@ -321,12 +351,12 @@ export async function pollResearch(jobRecordId = 'research', apiKey?: string, re
   for (const id of job.requestIds) if (!completedIds.has(id)) gaps.push(`Saved link still awaiting verification: ${desk.requests.find(r => r.id === id)?.url || id}`);
   const targetSchool = desk.schools.find(s => s.id === job.schoolIds[0]);
   const requestedDepartments = targetSchool ? new Set([...targetSchool.departments, ...targetSchool.sources.map(s => s.department)].map(d => departmentName(d, targetSchool).toLowerCase())) : new Set<string>();
-  const coverageDepartments = (job.departments || []).filter(d => targetSchool && requestedDepartments.has(departmentName(d.department, targetSchool).toLowerCase()));
+  const coverageDepartments = (job.departments || []).filter(d => !discoveryExclusionReason({ department: d.department }) && targetSchool && requestedDepartments.has(departmentName(d.department, targetSchool).toLowerCase()));
   const coverageIssues = job.scope === 'school' ? assessSchoolCoverage(job.sources || [], coverageDepartments, result.sourceReviews, importedUrls, gaps) : [];
   if (job.scope === 'school' && !coverageIssues.length) checkedIds.add(job.schoolIds[0]);
   const finalGaps = job.scope === 'school' ? coverageIssues : gaps;
   const coverage = job.scope === 'link' ? `${completedIds.size}/${job.requestIds.length} links analyzed.` : job.scope === 'school' ? `${checkedIds.size}/1 schools verified against fetched sources.` : `${checkedIds.size}/${job.schoolIds.length} schools reported checked.`;
-  const summary = `${added} new, ${updated} updated openings.${archived ? ` ${archived} archived findings kept out of the inbox.` : ''} ${coverage} ${result.summary}`;
+  const summary = `${added} new, ${updated} updated openings.${archived ? ` ${archived} archived findings kept out of the inbox.` : ''} ${excluded ? ` ${excluded} out-of-scope or expired/previous-cycle postings excluded.` : ''} ${coverage} ${result.summary}`;
   write('run', job.id, { id: job.id, date, summary, checked: inspected.length, newOpenings: added, failures: finalGaps, sources: inspected });
   const done = { ...job, documents: undefined, ...(job.scope === 'school' ? { sourceReviews: result.sourceReviews, importedUrls } : {}), status: 'completed', error: undefined, dispatchBlocked: false, uncertainStart: false, summary, added, updated, checked: inspected.length, gaps: finalGaps.length, coverageIssues: job.scope === 'school' ? coverageIssues : undefined, needsRetry: coverageIssues.length > 0 || job.requestIds.some(id => !completedIds.has(id)) }; delete done.revision;
   statements.push(db.prepare('UPDATE records SET data=?,revision=revision+1,updated_at=? WHERE id=? AND revision=?').bind(JSON.stringify(done), date, 'meta:' + recordId(job), job.revision));

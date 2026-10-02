@@ -15,11 +15,11 @@ function result(h, title, scopeEvidence) {
   h.respond(() => complete([{ ...finding, title, sourceUrl: posting, applicationUrl: null, scopeEvidence }], { inspectedUrls: [sourceUrl, posting], sourceReviews: [review(sourceUrl, 'openings', [posting]), review(posting, 'openings', [posting])] }, []));
 }
 
-test('statistics and biostatistics roles import with subject evidence from their posting', async t => {
-  const title = 'Professor of Biostatistics', quote = 'Research in statistical inference and machine learning';
+test('statistics roles import with subject evidence from their posting', async t => {
+  const title = 'Professor of Statistics', quote = 'Research in statistical inference and machine learning';
   const h = setup(t, title, quote);
   await h.api.startSchoolResearch(school.id, 'scope-test', key);
-  assert.match(h.calls[0].body.instructions, /statistics\/biostatistics, AI\/ML and data-science hiring pages/);
+  assert.match(h.calls[0].body.instructions, /statistics, AI\/ML and data-science hiring pages/);
   result(h, title, { area: 'Statistics', quote, reason: 'The role recruits researchers in statistical methods and learning.' });
   await h.api.pollResearch('scope-test', key);
   assert.equal(h.count('opening'), 1); assert.equal(h.get('meta', 'scope-test').needsRetry, false);
@@ -61,4 +61,40 @@ test('an explicitly pasted posting still receives full analysis outside discover
   h.respond(() => complete([{ ...finding, sourceRequestId: 'manual', sourceUrl: posting, title: 'Professor of Architecture', applicationUrl: null, scopeEvidence: null }], { inspectedUrls: [posting], completedRequestIds: ['manual'] }, []));
   await h.api.pollResearch('research-link-manual', key);
   assert.equal(h.count('opening'), 1); assert.equal(h.get('request', 'manual').status, 'Researched');
+});
+
+for (const title of ['Professor of Biostatistics', 'Professor of AI in Psychology', 'Professor of Data Science, Business School', 'Professor of Statistics, Wharton School', 'Professor of Machine Learning for Physics']) {
+  test(`discovery excludes ${title} even with a valid AI/statistics quote`, async t => {
+    const quote = 'Research in statistical inference and machine learning';
+    const h = setup(t, title, quote);
+    h.put('school', school.id, { ...school, sources: [{ department: 'CS', url: sourceUrl }, { department: 'CS', url: posting }] });
+    await h.api.startSchoolResearch(school.id, 'scope-test', key);
+    result(h, title, { area: 'ML', quote, reason: 'Method is mentioned.' });
+    await h.api.pollResearch('scope-test', key);
+    assert.equal(h.count('opening'), 0);
+    assert.equal(h.get('meta', 'scope-test').needsRetry, false, 'deliberate exclusion is accounted for');
+    assert.match(h.get('meta', 'scope-test').summary, /1 out-of-scope/);
+  });
+}
+
+test('incidental collaboration with biostatistics or psychology does not exclude a real CS hire', async t => {
+  const quote = 'Research in machine learning';
+  const h = setup(t, 'Professor of Computer Science', quote + '. Faculty collaborate with psychology and biostatistics departments.');
+  await h.api.startSchoolResearch(school.id, 'scope-test', key);
+  result(h, 'Professor of Computer Science', { area: 'ML', quote, reason: 'Core ML research.' });
+  await h.api.pollResearch('scope-test', key);
+  assert.equal(h.count('opening'), 1);
+});
+
+test('an excluded department cannot hide behind a generic model title', t => {
+  const h = harness(t);
+  assert.ok(h.scope.discoveryExclusionReason({ title: 'Assistant Professor', department: 'Statistics' }, { text: 'The School of Business invites applications for an assistant professor in machine learning.' }));
+  assert.equal(h.scope.discoveryExclusionReason({ title: 'Professor of Statistics', department: 'Statistics' }, { text: 'Our faculty collaborate with the School of Business on research.' }), null);
+});
+
+test('CS data management and CS education are not confused with excluded hiring units', t => {
+  const h = harness(t);
+  for (const title of ['Assistant Professor of Computer Science — Data Management', 'Professor of Computer Science Education'])
+    assert.equal(h.scope.discoveryExclusionReason({ title, department: 'CS' }), null);
+  assert.ok(h.scope.discoveryExclusionReason({ title: 'Assistant Professor', department: 'Management' }));
 });
