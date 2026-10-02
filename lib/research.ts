@@ -103,22 +103,22 @@ export async function startResearch(scope: ResearchScope, requestId?: string, re
   return researchStatus(apiKey);
 }
 
-export async function pollResearch(jobRecordId = 'research', apiKey?: string) {
+export async function pollResearch(jobRecordId = 'research', apiKey?: string, recoverSaved = false) {
   let job = await getJob(jobRecordId);
-  if (!job || !active(job)) return researchStatus(apiKey);
+  if (!job || (recoverSaved ? job.status !== 'failed' || !job.responseId : !active(job))) return researchStatus(apiKey);
   if (!job.responseId) {
     if (Date.now() - Date.parse(job.startedAt) > 120000) await updateJob(job, { status: 'failed', uncertainStart: true, summary: 'Search start was interrupted.', error: 'The search start could not be confirmed. Check API usage before retrying.' });
     return researchStatus(apiKey);
   }
   if (job.browserKey && !apiKey) {
-    await updateJob(job, { status: 'blocked', error: 'Enter the API key used to start this research, then retry status. The saved search will resume.' });
+    await updateJob(job, { status: recoverSaved ? 'failed' : 'blocked', error: recoverSaved ? 'Enter the original API key, then choose Recover saved result again.' : 'Enter the API key used to start this research, then retry status. The saved search will resume.' });
     return researchStatus(apiKey);
   }
   let response;
   try { response = await provider('/' + encodeURIComponent(job.responseId), undefined, apiKey); }
   catch (e) {
     if (e instanceof ProviderError && (job.browserKey || apiKey) && [401, 403, 404, 410].includes(e.status)) {
-      await updateJob(job, { status: 'blocked', error: 'Could not access the saved result with this key. Restore the original key or one from the same OpenAI project and retry status. If the result expired, stop tracking it and start again.' });
+      await updateJob(job, { status: recoverSaved ? 'failed' : 'blocked', error: recoverSaved ? 'Could not retrieve the saved result. Use the original key or one from the same OpenAI project, then choose Recover saved result again. An expired result requires a new search.' : 'Could not access the saved result with this key. Restore the original key or one from the same OpenAI project and retry status. If the result expired, stop tracking it and start again.' });
       return researchStatus(apiKey);
     }
     if (!(e instanceof ProviderError) || ![404, 410].includes(e.status)) throw e;
@@ -137,7 +137,23 @@ export async function pollResearch(jobRecordId = 'research', apiKey?: string) {
   try { result = decodeResearch(response); }
   catch (e) { await updateJob(job, { status: 'failed', summary: 'Search needs attention.', error: (e as Error).message }); return researchStatus(apiKey); }
   const desk = await readDesk();
-  if (job.scope === 'school' && !job.verificationPass) {
+  if (recoverSaved && job.scope === 'school') {
+    const school = desk.schools.find(s => s.id === job!.schoolIds[0]);
+    const existing = new Set((job.sources || []).flatMap(s => [s.url, s.retrievedUrl].filter(Boolean).map(u => normalizedUrl(u!))));
+    const candidates = [...new Set(result.openings.map(o => normalizedUrl(o.sourceUrl)))].filter(url => !existing.has(url) && school && officialSource(url, school));
+    const documents = [...(job.documents || [])], sourceIssues = [...(job.sourceIssues || [])];
+    for (let i = 0; i < Math.min(candidates.length, 8); i += 4) documents.push(...await Promise.all(candidates.slice(i, Math.min(i + 4, 8)).map((url, n) => readResearchSource({ id: `recover:${school!.id}:${i + n}`, url }))));
+    for (const url of candidates.slice(8)) sourceIssues.push(`${url}: saved-result recovery source limit reached.`);
+    if (candidates.length) {
+      let remaining = 180000;
+      for (const doc of documents) { if (doc.text.length > remaining) { doc.text = doc.text.slice(0, remaining); doc.complete = false; } remaining -= doc.text.length; }
+      if (!await updateJob(job, { documents, sources: documents.map(sourceReceipt), sourceIssues })) return researchStatus(apiKey);
+      job = (await getJob(jobRecordId))!;
+    }
+  }
+  // A saved-response recovery is GET-only: it may read public sources and import them,
+  // but must never launch a second extraction request or restart discovery.
+  if (job.scope === 'school' && !job.verificationPass && !recoverSaved) {
     const school = desk.schools.find(s => s.id === job!.schoolIds[0])!;
     const existing = new Set((job.sources || []).flatMap(s => [s.url, s.retrievedUrl].filter(Boolean).map(u => normalizedUrl(u!))));
     const candidates = [...new Set([...result.openings.map(o => o.sourceUrl), ...result.sourceReviews.flatMap(r => [r.url, ...r.openingUrls])].map(normalizedUrl))];
@@ -312,7 +328,7 @@ export async function pollResearch(jobRecordId = 'research', apiKey?: string) {
   const coverage = job.scope === 'link' ? `${completedIds.size}/${job.requestIds.length} links analyzed.` : job.scope === 'school' ? `${checkedIds.size}/1 schools verified against fetched sources.` : `${checkedIds.size}/${job.schoolIds.length} schools reported checked.`;
   const summary = `${added} new, ${updated} updated openings.${archived ? ` ${archived} archived findings kept out of the inbox.` : ''} ${coverage} ${result.summary}`;
   write('run', job.id, { id: job.id, date, summary, checked: inspected.length, newOpenings: added, failures: finalGaps, sources: inspected });
-  const done = { ...job, documents: undefined, ...(job.scope === 'school' ? { sourceReviews: result.sourceReviews, importedUrls } : {}), status: 'completed', error: undefined, summary, added, updated, checked: inspected.length, gaps: finalGaps.length, coverageIssues: job.scope === 'school' ? coverageIssues : undefined, needsRetry: coverageIssues.length > 0 || job.requestIds.some(id => !completedIds.has(id)) }; delete done.revision;
+  const done = { ...job, documents: undefined, ...(job.scope === 'school' ? { sourceReviews: result.sourceReviews, importedUrls } : {}), status: 'completed', error: undefined, dispatchBlocked: false, uncertainStart: false, summary, added, updated, checked: inspected.length, gaps: finalGaps.length, coverageIssues: job.scope === 'school' ? coverageIssues : undefined, needsRetry: coverageIssues.length > 0 || job.requestIds.some(id => !completedIds.has(id)) }; delete done.revision;
   statements.push(db.prepare('UPDATE records SET data=?,revision=revision+1,updated_at=? WHERE id=? AND revision=?').bind(JSON.stringify(done), date, 'meta:' + recordId(job), job.revision));
   await db.batch(statements);
   return researchStatus(apiKey);

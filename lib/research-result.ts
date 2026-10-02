@@ -129,8 +129,29 @@ export function decodeResearch(response: any) {
   const content = (response.output || []).filter((x: any) => x.type === 'message').flatMap((x: any) => x.content || []);
   if (content.some((x: any) => x.type === 'refusal')) throw new Error('The research provider could not complete this request. No findings were imported.');
   const output = content.filter((x: any) => x.type === 'output_text').map((x: any) => x.text).join('');
-  try { return researchResult.parse(JSON.parse(output)); }
-  catch { throw new Error('The research result was incomplete or invalid. No findings were imported.'); }
+  try {
+    const parsed = JSON.parse(output);
+    const linkWarnings: string[] = [];
+    // Optional application links do not justify discarding every otherwise
+    // valid finding. Omit unsafe destinations; source URLs stay mandatory.
+    if (Array.isArray(parsed.openings) && Array.isArray(parsed.gaps)) {
+      for (const opening of parsed.openings) {
+        if (opening && typeof opening.applicationUrl === 'string' && !https.safeParse(opening.applicationUrl).success) {
+          opening.applicationUrl = null;
+          linkWarnings.push(`${typeof opening.title === 'string' ? opening.title.slice(0, 500) : 'An opening'}: application link omitted because it was not a valid public HTTPS URL.`);
+        }
+      }
+    }
+    const result = researchResult.parse(parsed);
+    // Provider limits apply to provider data, not additional local diagnostics.
+    result.gaps.push(...linkWarnings);
+    return result;
+  }
+  catch (error) {
+    // Expose schema paths/codes only, never raw provider output or credentials.
+    const detail = error instanceof z.ZodError ? error.issues.slice(0, 6).map(issue => `${issue.path.join('.') || 'result'} (${issue.code})`).join('; ') : 'Response was not valid JSON';
+    throw new Error(`The research result was incomplete or invalid. No findings were imported. ${detail}.`);
+  }
 }
 
 export function providerSourceUrls(response: any): Set<string> {

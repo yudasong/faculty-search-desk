@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/compone
 import { RESEARCH_AREA_LABEL } from '@/lib/research-scope';
 import { browserApiKey, keyChangedEvent, researchFetch } from '@/lib/browser-api-key';
 
-type SchoolProgress = { schoolId: string; attempt: number; name: string; status: 'pending' | 'running' | 'completed' | 'partial' | 'failed' | 'blocked'; summary?: string; issues?: string[]; sources?: { url: string; readable: boolean; complete: boolean; error?: string }[]; added?: number; updated?: number };
+type SchoolProgress = { canRecover?: boolean; schoolId: string; attempt: number; name: string; status: 'pending' | 'running' | 'completed' | 'partial' | 'failed' | 'blocked'; summary?: string; issues?: string[]; sources?: { url: string; readable: boolean; complete: boolean; error?: string }[]; added?: number; updated?: number };
 type Job = { id: string; status: string; summary: string; error?: string; added?: number; updated?: number; gaps?: number; needsRetry?: boolean; schoolCount: number; requestId?: string; sourceUrl?: string; schools?: SchoolProgress[]; completedSchools?: number; totalSchools?: number; legacyCoverage?: boolean };
 type State = { configured: boolean; job: Job | null; links: Job[]; errors?: string[] };
 const schoolStatus: Record<SchoolProgress['status'], string> = { pending: 'Waiting', running: 'Searching', completed: 'Coverage complete', partial: 'Coverage gaps', failed: 'Failed', blocked: 'Needs attention' };
@@ -129,6 +129,7 @@ export function ResearchControl({ considering, total, inboxCount, schools = [], 
                 <span className="block text-xs">{!source.readable ? 'Not read' : !source.complete ? 'Partially read' : 'Read in full'}{source.error ? ` · ${source.error}` : ''}</span>
               </li>)}
             </ul> : <p className="muted">{school.status === 'pending' ? 'Waiting to check official hiring pages.' : school.status === 'running' ? 'Checking official hiring pages and linked postings.' : 'No source reading was recorded.'}</p>}
+            {school.canRecover && <div><Button variant="outline" size="sm" disabled={busy || running || !state?.configured} onClick={async()=>{setBusy(true);try{await request({action:'recover_school',schoolId:school.schoolId});}catch(e){setError((e as Error).message);}finally{setBusy(false);}}}>Recover saved result</Button><p className="muted">Retrieve the existing response without starting a new paid analysis.</p></div>}
             {['completed', 'partial', 'failed'].includes(school.status) && <div><Button variant="outline" size="sm" disabled={busy || running || paused || !state?.configured} onClick={() => retrySchools(school.schoolId)}>{school.status === 'completed' ? 'Search this school again' : 'Retry this school'}</Button></div>}
             {school.status === 'blocked' && <div><p className="muted">Restore the original key and retry status. If this result has expired, stop tracking it to allow a new attempt; this does not cancel work at OpenAI.</p><Button variant="outline" size="sm" disabled={busy} onClick={() => request({ action: 'stop_school_tracking', schoolId: school.schoolId }).catch(e => setError(e.message))}>Stop tracking this result</Button></div>}
           </div>

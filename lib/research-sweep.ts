@@ -11,6 +11,7 @@ async function snapshot(sweep: Sweep) {
   const tasks = await Promise.all(sweep.tasks.map(async task => ({ task, job: await getJob(taskKey(sweep, task)) })));
   const schools = tasks.map(({ task, job }) => ({
     schoolId: task.schoolId, name: task.name, attempt: task.attempt,
+    canRecover: job?.status === 'failed' && !!job.responseId,
     status: !job ? 'pending' : job.status === 'completed' ? job.needsRetry ? 'partial' : 'completed' : job.status === 'starting' ? 'running' : job.status,
     summary: job?.summary, issues: [...(job?.coverageIssues || job?.sourceIssues || []), ...(job?.error ? [job.error] : [])],
     sources: (job?.sources || []).map(s => ({ url: s.url, readable: s.readable, complete: s.complete, error: s.error })),
@@ -173,5 +174,21 @@ export async function stopSchoolTracking(schoolId: string, apiKey?: string) {
     if (current?.id === sweep.id && current.revision === sweep.revision)
       await stopTrackingResearch(undefined, apiKey, taskKey(sweep, task));
   } finally { await release(lease); }
+  return sweepStatus(apiKey);
+}
+
+export async function recoverSchool(schoolId: string, apiKey?: string) {
+  if (!researchConfigured(apiKey)) throw new Error('Add the API key used for this search to retrieve its saved result.');
+  const sweep = await readSweep();
+  const task = sweep?.tasks.find(t => t.schoolId === schoolId);
+  if (!sweep || !task) throw new Error('That school is not in this search.');
+  const lease = await acquire(sweep);
+  if (!lease) return sweepStatus(apiKey);
+  try {
+    const current = await readSweep();
+    if (current?.id !== sweep.id || current.revision !== sweep.revision) return sweepStatus(apiKey);
+    await pollResearch(taskKey(current, task), apiKey, true);
+  }
+  finally { await release(lease); }
   return sweepStatus(apiKey);
 }
